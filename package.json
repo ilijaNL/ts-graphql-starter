@@ -1,0 +1,34 @@
+{
+  "name": "ts-hasura-starter",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "engines": {
+    "node": ">=14",
+    "pnpm": ">=7"
+  },
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "clean": "turbo run clean",
+    "tc": "turbo run tc",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean:danger": "git clean -xdf",
+    "gen": "turbo run gen",
+    "start:engine": "docker-compose up",
+    "hasura": "hasura --skip-update-check --project ./graphql-engine",
+    "console": "pnpm run hasura console",
+    "hasura:metadata:apply": "pnpm run hasura metadata apply"
+  },
+  "keywords": [],
+  "author": "ilijaNL",
+  "license": "MIT",
+  "devDependencies": {
+    "turbo": "^1.8.8",
+    "hasura-cli": "~2.21.0",
+    "prettier": "^2.7.1"
+  }
+}

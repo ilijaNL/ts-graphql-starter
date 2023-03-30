@@ -1,0 +1,40 @@
+FROM node:18-alpine as base
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="${PATH}:${PNPM_HOME}"
+RUN npm install --global pnpm
+RUN pnpm add -g turbo@^1.8.6
+
+FROM base as builder
+# Set working directory
+WORKDIR /app
+COPY . .
+ARG NODE_APP
+RUN turbo prune --scope=$NODE_APP --docker
+
+# Add lockfile and package.json's of isolated subworkspace
+FROM base AS installer
+WORKDIR /app
+COPY --from=builder /app/out/json/ .
+COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
+COPY --from=builder /app/out/full/ .
+COPY .gitignore .gitignore
+COPY turbo.json turbo.json
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+ARG NODE_APP
+RUN pnpm turbo run build --filter=$NODE_APP...
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+
+USER node
+COPY --from=installer --chown=node:node /app .
+
+ARG APP_DIR
+WORKDIR /app/$APP_DIR
+
+ARG NODE_ENV=production
+ENV NODE_ENV $NODE_ENV
+
+EXPOSE 3000
+CMD ["node", "-r", "./bootstrap.js", "dist/server.js"]

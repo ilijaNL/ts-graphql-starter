@@ -1,0 +1,69 @@
+version: '3.8'
+services:
+  postgres:
+    image: timescale/timescaledb-ha:pg14-latest
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    ports:
+      - '5432:5432'
+    volumes: # used for initial setup
+      - './db/dumps/:/docker-entrypoint-initdb.d/'
+    restart: on-failure
+    networks:
+      - ts-graphql-starter
+  graphql-engine:
+    build: ./graphql-engine
+    volumes: # used for initial setup
+      - './graphql-engine/metadata/:/hasura-metadata/'
+      # migrations are managed by api services
+      # - './graphql-engine/migrations/:/hasura-migrations/'
+    ports:
+      - '8082:8080'
+    restart: on-failure
+    depends_on:
+      - postgres
+    networks:
+      - ts-graphql-starter
+    environment:
+      ## postgres database to store Hasura metadata
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:postgres@postgres:5432/app
+      ## this env var can be used to add the above postgres database to Hasura as a data source. this can be removed/updated based on your needs
+      PG_DATABASE_URL: postgres://postgres:postgres@postgres:5432/app
+      HASURA_GRAPHQL_ADMIN_SECRET: admin12345
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: false
+      ## "$['graphql']"
+      HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256","key":"c9c4ad92-dc28-4928-99f8-689c391bd277","claims_namespace_path":"$$.graphql","allowed_skew": 30}'
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: false # set to "false" to disable console
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anonymous
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: true
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - "MINIO_ACCESS_KEY=minio"
+      - "MINIO_SECRET_KEY=minio123"
+    command: server --console-address ":9001" /data
+    networks:
+      - ts-graphql-starter
+  createbuckets:
+    image: minio/mc
+    networks:
+      - ts-graphql-starter
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minio minio123;
+      /usr/bin/mc mb --region=eu-west myminio/bucket;
+      /usr/bin/mc anonymous set download myminio/bucket;
+      exit 0;
+      "
+networks:
+  ts-graphql-starter:
+    driver: bridge

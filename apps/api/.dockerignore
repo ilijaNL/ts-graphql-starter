@@ -1,0 +1,10 @@
+**/node_modules/**
+npm-debug.log
+.env
+dist
+bin
+.nyc_output
+coverage/
+tests/
+turbo/
+vscode/

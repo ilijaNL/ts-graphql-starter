@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "NodeJS",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "noEmitOnError": true,
+    "resolveJsonModule": true,
+    "isolatedModules": false
+  },
+  "include": ["./src"]
+}

@@ -1,0 +1,12 @@
+**/node_modules/
+**/npm-debug.log
+**/.env
+**/dist
+**/bin
+.git
+**/out
+**/.next
+**/tsconfig.tsbuildinfo
+db/
+docker/**
+**/.turbo

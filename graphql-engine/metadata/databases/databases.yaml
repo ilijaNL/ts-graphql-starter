@@ -1,0 +1,14 @@
+- name: app
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: PG_DATABASE_URL
+      isolation_level: read-committed
+      pool_settings:
+        connection_lifetime: 600
+        max_connections: 20
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+  tables: "!include app/tables/tables.yaml"
