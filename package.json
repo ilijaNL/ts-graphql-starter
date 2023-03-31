@@ -21,7 +21,7 @@
     "start:engine": "docker-compose up",
     "hasura": "hasura --skip-update-check --project ./graphql-engine",
     "console": "pnpm run hasura console",
-    "hasura:metadata:apply": "pnpm run hasura metadata apply"
+    "metadata:apply": "pnpm run hasura metadata apply"
   },
   "keywords": [],
   "author": "ilijaNL",
