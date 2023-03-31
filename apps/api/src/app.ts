@@ -1,7 +1,6 @@
 import { FastifyPluginAsync, FastifyServerOptions, RouteOptions } from 'fastify';
 import fp from 'fastify-plugin';
 import fastifyHelmet from '@fastify/helmet';
-import _ from 'lodash';
 import sensible from '@fastify/sensible';
 import environment from './env';
 

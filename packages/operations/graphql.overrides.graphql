@@ -1,0 +1,7 @@
+type query_root {
+  __health: Boolean!
+}
+
+type mutation_root {
+  noop: Boolean!
+}

@@ -31,9 +31,10 @@ const parseFileName = (fileName: string): FileInfo => {
     throw new Error(`Invalid file name: '${fileName}'.`);
   }
 
-  const [, id, name, _type] = result;
+  const [, id, name] = result;
 
   return {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     id: parseId(id!),
     name: name == null || name === '' ? fileName : name,
   };
