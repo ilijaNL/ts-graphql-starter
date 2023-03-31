@@ -3,6 +3,7 @@ import fp from 'fastify-plugin';
 import fastifyHelmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
 import environment from './env';
+import { authService } from './services/auth';
 
 const IS_PROD = environment.NODE_ENV === 'production';
 
@@ -22,6 +23,10 @@ const app: FastifyPluginAsync = async (fastify) => {
   }
 
   await fastify.register(sensible);
+
+  fastify.register(authService, {
+    prefix: '/auth',
+  });
 
   fastify.get('/_health', (_, reply) => {
     return reply.status(200).send('ok');

@@ -2,8 +2,9 @@
   "extends": "tsconfig/node.json",
   "compilerOptions": {
     "baseUrl": "./src",
-    "paths": {},
-    "lib": ["esnext", "esnext.asynciterable"],
+    "paths": {
+      "@/*": ["./*"]
+    },
     "outDir": "./dist",
     "sourceMap": true
   },

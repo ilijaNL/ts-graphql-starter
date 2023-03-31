@@ -25,10 +25,10 @@ const closeListeners = closeWithGrace({ delay: 5000 }, async ({ err }: any) => {
   await server.close();
 });
 
-server.addHook('onClose', async (_, done) => {
+server.addHook('onClose', async () => {
   closeListeners.uninstall();
 
-  done();
+  await new Promise((resolve) => setTimeout(resolve, 10));
 });
 
 // Start listening.

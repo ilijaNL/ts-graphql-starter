@@ -1,5 +1,6 @@
 import { Pool, PoolConfig, types } from 'pg';
 import fp from 'fastify-plugin';
+import { FastifyInstance } from 'fastify';
 
 types.setTypeParser(types.builtins.TIMESTAMPTZ, function (val) {
   return val;
@@ -20,4 +21,8 @@ const poolPlugin = fp<{ poolConfig: PoolConfig }>(async (fastify, opts) => {
   });
 });
 
-export default poolPlugin;
+export const registerPool = async (fastify: FastifyInstance, config: PoolConfig) => {
+  await fastify.register(poolPlugin, {
+    poolConfig: config,
+  });
+};

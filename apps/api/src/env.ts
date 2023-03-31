@@ -2,7 +2,7 @@
 require('dotenv').config();
 
 import { Type } from '@sinclair/typebox';
-import { parseEnvs } from 'utils/env';
+import { parseEnvs } from '@/utils/env';
 
 const ENVS = parseEnvs(
   Type.Object({

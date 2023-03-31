@@ -3,6 +3,7 @@ import { createValidateFn } from './schema';
 
 export function parseEnvs<T extends TSchema>(schema: T) {
   const fn = createValidateFn(schema);
+  // eslint-disable-next-line no-process-env
   const environment = process.env;
 
   if (!fn(environment)) {

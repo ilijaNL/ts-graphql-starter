@@ -1,8 +1,9 @@
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const tsConfig = require('./tsconfig.json');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const tsConfigPaths = require('tsconfig-paths');
-const path = require('node:path');
 
-const baseUrl = path.join(__dirname, 'dist');
+const baseUrl = './dist';
 
 tsConfigPaths.register({
   baseUrl,
