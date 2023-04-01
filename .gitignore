@@ -34,3 +34,5 @@ db/dumps/
 cypress.env.json
 
 out/
+
+thunder-tests/
