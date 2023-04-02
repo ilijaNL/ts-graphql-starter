@@ -6,7 +6,7 @@ import { Type } from '@sinclair/typebox';
 import { MockAgent } from 'undici';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { addMocksToSchema } from '@graphql-tools/mock';
-import { graphql } from 'graphql';
+import { graphql, parse, print } from 'graphql';
 
 const queryDoc = { __meta__: { hash: 'hash1' } } as unknown as DocumentNode<{ me: number }, { var1: string }>;
 
@@ -79,14 +79,14 @@ tap.test('rejects when not found', async (t) => {
 });
 
 tap.test('calls remote', async (t) => {
-  t.plan(3);
+  t.plan(4);
   const agent = new MockAgent();
   agent.disableNetConnect();
 
   const client = agent.get('http://localhost:3001');
 
   const hashMap = {
-    hash1: 'query test { test }',
+    hash1: `query test { test }`,
   };
 
   client
@@ -96,7 +96,9 @@ tap.test('calls remote', async (t) => {
     })
     .reply(200, ({ body, headers }) => {
       const input = JSON.parse(body as any);
-      t.same(input, { query: hashMap.hash1, variables: { var1: 'var2' } });
+
+      t.equal(input.query, print(parse(hashMap.hash1)));
+      t.same(input.variables, { var1: 'var2' });
       t.equal((headers as Record<string, string>)['header'], 'head1');
       return {
         data: {
@@ -184,6 +186,91 @@ tap.test('dedupes remote', async (t) => {
 
     const [res1, res2] = await Promise.all([r1, r2]);
     t.not(res1, res2);
+  }
+});
+
+tap.test('correctly handles directives', async (t) => {
+  const agent = new MockAgent();
+  agent.disableNetConnect();
+
+  const hashMap = {
+    hash1: `query test @pcached(ttl: 1) { test }`,
+    hash2: `query abc @cached(ttl: 1) { test }`,
+    hash3: `query d { awaw }`,
+  };
+
+  const queries: string[] = [];
+
+  const client = agent.get('http://localhost:3001');
+  client
+    .intercept({
+      path: '/v1/graphql',
+      method: 'POST',
+    })
+    .reply(200, ({ body }) => {
+      const { query } = JSON.parse(body as string);
+      queries.push(query);
+      return Buffer.from(Math.random().toString());
+    })
+    .times(3);
+
+  const proxy = createHasuraProxy(new URL('http://localhost:3001/v1/graphql'), hashMap, {
+    undiciOpts: {
+      factory() {
+        return client;
+      },
+    },
+  });
+
+  await proxy.request('hash1');
+  await proxy.request('hash2');
+  await proxy.request('hash3');
+
+  t.same(queries, [print(parse('query test { test }')), print(parse(hashMap.hash2)), print(parse(hashMap.hash3))]);
+});
+
+tap.test('caches remote', async (t) => {
+  const agent = new MockAgent();
+  agent.disableNetConnect();
+
+  const hashMap = {
+    hash1: `query test @pcached(ttl: 1) { test }`,
+  };
+
+  const client = agent.get('http://localhost:3001');
+  client
+    .intercept({
+      path: '/v1/graphql',
+      method: 'POST',
+    })
+    .reply(200, ({ body }) => {
+      const { query } = JSON.parse(body as string);
+      t.equal(query, print(parse('query test { test }')));
+      return Buffer.from(Math.random().toString());
+    })
+    .times(2);
+
+  const proxy = createHasuraProxy(new URL('http://localhost:3001/v1/graphql'), hashMap, {
+    undiciOpts: {
+      factory() {
+        return client;
+      },
+    },
+  });
+
+  t.teardown(() => proxy.close());
+
+  // test that it caches remote requests with correct ttl
+  {
+    const r1 = await proxy.request('hash1', { var1: 'var2' }, { header: 'head1', 'x-hasura-h': 'a' });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const r2 = await proxy.request('hash1', { var1: 'var2' }, { header: 'head1', 'x-hasura-h': 'a' });
+
+    t.equal(r1, r2);
+
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+    const r3 = await proxy.request('hash1', { var1: 'var2' }, { header: 'head1', 'x-hasura-h': 'a' });
+    t.not(r2, r3);
   }
 });
 

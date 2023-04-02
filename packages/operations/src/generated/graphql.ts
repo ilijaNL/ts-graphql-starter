@@ -317,6 +317,186 @@ export type Auth_Account_Info_Updates = {
   where: Auth_Account_Info_Bool_Exp;
 };
 
+/** columns and relationships of "auth.account_providers" */
+export type Auth_Account_Providers = {
+  account_id: Scalars['uuid'];
+  created_at: Scalars['timestamptz'];
+  id: Scalars['uuid'];
+  provider: Scalars['String'];
+  provider_account_id: Scalars['String'];
+  updated_at: Scalars['timestamptz'];
+};
+
+/** aggregated selection of "auth.account_providers" */
+export type Auth_Account_Providers_Aggregate = {
+  aggregate: Maybe<Auth_Account_Providers_Aggregate_Fields>;
+  nodes: Array<Auth_Account_Providers>;
+};
+
+/** aggregate fields of "auth.account_providers" */
+export type Auth_Account_Providers_Aggregate_Fields = {
+  count: Scalars['Int'];
+  max: Maybe<Auth_Account_Providers_Max_Fields>;
+  min: Maybe<Auth_Account_Providers_Min_Fields>;
+};
+
+
+/** aggregate fields of "auth.account_providers" */
+export type Auth_Account_Providers_Aggregate_FieldsCountArgs = {
+  columns: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
+  distinct: InputMaybe<Scalars['Boolean']>;
+};
+
+/** Boolean expression to filter rows from the table "auth.account_providers". All fields are combined with a logical 'AND'. */
+export type Auth_Account_Providers_Bool_Exp = {
+  _and?: InputMaybe<Array<Auth_Account_Providers_Bool_Exp>>;
+  _not?: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+  _or?: InputMaybe<Array<Auth_Account_Providers_Bool_Exp>>;
+  account_id?: InputMaybe<Uuid_Comparison_Exp>;
+  created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+  id?: InputMaybe<Uuid_Comparison_Exp>;
+  provider?: InputMaybe<String_Comparison_Exp>;
+  provider_account_id?: InputMaybe<String_Comparison_Exp>;
+  updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
+};
+
+/** unique or primary key constraints on table "auth.account_providers" */
+export enum Auth_Account_Providers_Constraint {
+  /** unique or primary key constraint on columns "id" */
+  AccountProvidersPkey = 'account_providers_pkey',
+  /** unique or primary key constraint on columns "provider_account_id", "provider" */
+  AccountProvidersProviderProviderAccountIdKey = 'account_providers_provider_provider_account_id_key',
+  /** unique or primary key constraint on columns "provider", "account_id" */
+  IdxProvidersAccIdProvider = 'idx_providers_acc_id_provider'
+}
+
+/** input type for inserting data into table "auth.account_providers" */
+export type Auth_Account_Providers_Insert_Input = {
+  account_id?: InputMaybe<Scalars['uuid']>;
+  created_at?: InputMaybe<Scalars['timestamptz']>;
+  id?: InputMaybe<Scalars['uuid']>;
+  provider?: InputMaybe<Scalars['String']>;
+  provider_account_id?: InputMaybe<Scalars['String']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']>;
+};
+
+/** aggregate max on columns */
+export type Auth_Account_Providers_Max_Fields = {
+  account_id: Maybe<Scalars['uuid']>;
+  created_at: Maybe<Scalars['timestamptz']>;
+  id: Maybe<Scalars['uuid']>;
+  provider: Maybe<Scalars['String']>;
+  provider_account_id: Maybe<Scalars['String']>;
+  updated_at: Maybe<Scalars['timestamptz']>;
+};
+
+/** aggregate min on columns */
+export type Auth_Account_Providers_Min_Fields = {
+  account_id: Maybe<Scalars['uuid']>;
+  created_at: Maybe<Scalars['timestamptz']>;
+  id: Maybe<Scalars['uuid']>;
+  provider: Maybe<Scalars['String']>;
+  provider_account_id: Maybe<Scalars['String']>;
+  updated_at: Maybe<Scalars['timestamptz']>;
+};
+
+/** response of any mutation on the table "auth.account_providers" */
+export type Auth_Account_Providers_Mutation_Response = {
+  /** number of rows affected by the mutation */
+  affected_rows: Scalars['Int'];
+  /** data from the rows affected by the mutation */
+  returning: Array<Auth_Account_Providers>;
+};
+
+/** on_conflict condition type for table "auth.account_providers" */
+export type Auth_Account_Providers_On_Conflict = {
+  constraint: Auth_Account_Providers_Constraint;
+  update_columns?: Array<Auth_Account_Providers_Update_Column>;
+  where?: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+};
+
+/** Ordering options when selecting data from "auth.account_providers". */
+export type Auth_Account_Providers_Order_By = {
+  account_id?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  provider?: InputMaybe<Order_By>;
+  provider_account_id?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
+/** primary key columns input for table: auth.account_providers */
+export type Auth_Account_Providers_Pk_Columns_Input = {
+  id: Scalars['uuid'];
+};
+
+/** select columns of table "auth.account_providers" */
+export enum Auth_Account_Providers_Select_Column {
+  /** column name */
+  AccountId = 'account_id',
+  /** column name */
+  CreatedAt = 'created_at',
+  /** column name */
+  Id = 'id',
+  /** column name */
+  Provider = 'provider',
+  /** column name */
+  ProviderAccountId = 'provider_account_id',
+  /** column name */
+  UpdatedAt = 'updated_at'
+}
+
+/** input type for updating data in table "auth.account_providers" */
+export type Auth_Account_Providers_Set_Input = {
+  account_id?: InputMaybe<Scalars['uuid']>;
+  created_at?: InputMaybe<Scalars['timestamptz']>;
+  id?: InputMaybe<Scalars['uuid']>;
+  provider?: InputMaybe<Scalars['String']>;
+  provider_account_id?: InputMaybe<Scalars['String']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']>;
+};
+
+/** Streaming cursor of the table "auth_account_providers" */
+export type Auth_Account_Providers_Stream_Cursor_Input = {
+  /** Stream column input with initial value */
+  initial_value: Auth_Account_Providers_Stream_Cursor_Value_Input;
+  /** cursor ordering */
+  ordering?: InputMaybe<Cursor_Ordering>;
+};
+
+/** Initial value of the column from where the streaming should start */
+export type Auth_Account_Providers_Stream_Cursor_Value_Input = {
+  account_id?: InputMaybe<Scalars['uuid']>;
+  created_at?: InputMaybe<Scalars['timestamptz']>;
+  id?: InputMaybe<Scalars['uuid']>;
+  provider?: InputMaybe<Scalars['String']>;
+  provider_account_id?: InputMaybe<Scalars['String']>;
+  updated_at?: InputMaybe<Scalars['timestamptz']>;
+};
+
+/** update columns of table "auth.account_providers" */
+export enum Auth_Account_Providers_Update_Column {
+  /** column name */
+  AccountId = 'account_id',
+  /** column name */
+  CreatedAt = 'created_at',
+  /** column name */
+  Id = 'id',
+  /** column name */
+  Provider = 'provider',
+  /** column name */
+  ProviderAccountId = 'provider_account_id',
+  /** column name */
+  UpdatedAt = 'updated_at'
+}
+
+export type Auth_Account_Providers_Updates = {
+  /** sets the columns of the filtered rows to the given values */
+  _set?: InputMaybe<Auth_Account_Providers_Set_Input>;
+  /** filter the rows which have to be updated */
+  where: Auth_Account_Providers_Bool_Exp;
+};
+
 /** columns and relationships of "auth.accounts" */
 export type Auth_Accounts = {
   created_at: Scalars['timestamptz'];
@@ -597,6 +777,10 @@ export type Mutation_Root = {
   delete_auth_account_info: Maybe<Auth_Account_Info_Mutation_Response>;
   /** delete single row from the table: "auth.account_info" */
   delete_auth_account_info_by_pk: Maybe<Auth_Account_Info>;
+  /** delete data from the table: "auth.account_providers" */
+  delete_auth_account_providers: Maybe<Auth_Account_Providers_Mutation_Response>;
+  /** delete single row from the table: "auth.account_providers" */
+  delete_auth_account_providers_by_pk: Maybe<Auth_Account_Providers>;
   /** delete data from the table: "auth.accounts" */
   delete_auth_accounts: Maybe<Auth_Accounts_Mutation_Response>;
   /** delete single row from the table: "auth.accounts" */
@@ -605,6 +789,10 @@ export type Mutation_Root = {
   insert_auth_account_info: Maybe<Auth_Account_Info_Mutation_Response>;
   /** insert a single row into the table: "auth.account_info" */
   insert_auth_account_info_one: Maybe<Auth_Account_Info>;
+  /** insert data into the table: "auth.account_providers" */
+  insert_auth_account_providers: Maybe<Auth_Account_Providers_Mutation_Response>;
+  /** insert a single row into the table: "auth.account_providers" */
+  insert_auth_account_providers_one: Maybe<Auth_Account_Providers>;
   /** insert data into the table: "auth.accounts" */
   insert_auth_accounts: Maybe<Auth_Accounts_Mutation_Response>;
   /** insert a single row into the table: "auth.accounts" */
@@ -616,6 +804,12 @@ export type Mutation_Root = {
   update_auth_account_info_by_pk: Maybe<Auth_Account_Info>;
   /** update multiples rows of table: "auth.account_info" */
   update_auth_account_info_many: Maybe<Array<Maybe<Auth_Account_Info_Mutation_Response>>>;
+  /** update data of the table: "auth.account_providers" */
+  update_auth_account_providers: Maybe<Auth_Account_Providers_Mutation_Response>;
+  /** update single row of the table: "auth.account_providers" */
+  update_auth_account_providers_by_pk: Maybe<Auth_Account_Providers>;
+  /** update multiples rows of table: "auth.account_providers" */
+  update_auth_account_providers_many: Maybe<Array<Maybe<Auth_Account_Providers_Mutation_Response>>>;
   /** update data of the table: "auth.accounts" */
   update_auth_accounts: Maybe<Auth_Accounts_Mutation_Response>;
   /** update single row of the table: "auth.accounts" */
@@ -633,6 +827,18 @@ export type Mutation_RootDelete_Auth_Account_InfoArgs = {
 
 /** mutation root */
 export type Mutation_RootDelete_Auth_Account_Info_By_PkArgs = {
+  id: Scalars['uuid'];
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_Auth_Account_ProvidersArgs = {
+  where: Auth_Account_Providers_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootDelete_Auth_Account_Providers_By_PkArgs = {
   id: Scalars['uuid'];
 };
 
@@ -660,6 +866,20 @@ export type Mutation_RootInsert_Auth_Account_InfoArgs = {
 export type Mutation_RootInsert_Auth_Account_Info_OneArgs = {
   object: Auth_Account_Info_Insert_Input;
   on_conflict: InputMaybe<Auth_Account_Info_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Auth_Account_ProvidersArgs = {
+  objects: Array<Auth_Account_Providers_Insert_Input>;
+  on_conflict: InputMaybe<Auth_Account_Providers_On_Conflict>;
+};
+
+
+/** mutation root */
+export type Mutation_RootInsert_Auth_Account_Providers_OneArgs = {
+  object: Auth_Account_Providers_Insert_Input;
+  on_conflict: InputMaybe<Auth_Account_Providers_On_Conflict>;
 };
 
 
@@ -708,6 +928,26 @@ export type Mutation_RootUpdate_Auth_Account_Info_ManyArgs = {
 
 
 /** mutation root */
+export type Mutation_RootUpdate_Auth_Account_ProvidersArgs = {
+  _set: InputMaybe<Auth_Account_Providers_Set_Input>;
+  where: Auth_Account_Providers_Bool_Exp;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Auth_Account_Providers_By_PkArgs = {
+  _set: InputMaybe<Auth_Account_Providers_Set_Input>;
+  pk_columns: Auth_Account_Providers_Pk_Columns_Input;
+};
+
+
+/** mutation root */
+export type Mutation_RootUpdate_Auth_Account_Providers_ManyArgs = {
+  updates: Array<Auth_Account_Providers_Updates>;
+};
+
+
+/** mutation root */
 export type Mutation_RootUpdate_Auth_AccountsArgs = {
   _inc: InputMaybe<Auth_Accounts_Inc_Input>;
   _set: InputMaybe<Auth_Accounts_Set_Input>;
@@ -752,12 +992,22 @@ export type Query_Root = {
   auth_account_info_aggregate: Auth_Account_Info_Aggregate;
   /** fetch data from the table: "auth.account_info" using primary key columns */
   auth_account_info_by_pk: Maybe<Auth_Account_Info>;
+  /** fetch data from the table: "auth.account_providers" */
+  auth_account_providers: Array<Auth_Account_Providers>;
+  /** fetch aggregated fields from the table: "auth.account_providers" */
+  auth_account_providers_aggregate: Auth_Account_Providers_Aggregate;
+  /** fetch data from the table: "auth.account_providers" using primary key columns */
+  auth_account_providers_by_pk: Maybe<Auth_Account_Providers>;
   /** fetch data from the table: "auth.accounts" */
   auth_accounts: Array<Auth_Accounts>;
   /** fetch aggregated fields from the table: "auth.accounts" */
   auth_accounts_aggregate: Auth_Accounts_Aggregate;
   /** fetch data from the table: "auth.accounts" using primary key columns */
   auth_accounts_by_pk: Maybe<Auth_Accounts>;
+  /** execute function "auth.get_me" which returns "auth.accounts" */
+  auth_get_me: Array<Auth_Accounts>;
+  /** execute function "auth.get_me" and query aggregates on result of table type "auth.accounts" */
+  auth_get_me_aggregate: Auth_Accounts_Aggregate;
 };
 
 
@@ -784,6 +1034,29 @@ export type Query_RootAuth_Account_Info_By_PkArgs = {
 };
 
 
+export type Query_RootAuth_Account_ProvidersArgs = {
+  distinct_on: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Account_Providers_Order_By>>;
+  where: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+};
+
+
+export type Query_RootAuth_Account_Providers_AggregateArgs = {
+  distinct_on: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Account_Providers_Order_By>>;
+  where: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+};
+
+
+export type Query_RootAuth_Account_Providers_By_PkArgs = {
+  id: Scalars['uuid'];
+};
+
+
 export type Query_RootAuth_AccountsArgs = {
   distinct_on: InputMaybe<Array<Auth_Accounts_Select_Column>>;
   limit: InputMaybe<Scalars['Int']>;
@@ -806,6 +1079,24 @@ export type Query_RootAuth_Accounts_By_PkArgs = {
   id: Scalars['uuid'];
 };
 
+
+export type Query_RootAuth_Get_MeArgs = {
+  distinct_on: InputMaybe<Array<Auth_Accounts_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Accounts_Order_By>>;
+  where: InputMaybe<Auth_Accounts_Bool_Exp>;
+};
+
+
+export type Query_RootAuth_Get_Me_AggregateArgs = {
+  distinct_on: InputMaybe<Array<Auth_Accounts_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Accounts_Order_By>>;
+  where: InputMaybe<Auth_Accounts_Bool_Exp>;
+};
+
 export type Subscription_Root = {
   /** fetch data from the table: "auth.account_info" */
   auth_account_info: Array<Auth_Account_Info>;
@@ -815,6 +1106,14 @@ export type Subscription_Root = {
   auth_account_info_by_pk: Maybe<Auth_Account_Info>;
   /** fetch data from the table in a streaming manner: "auth.account_info" */
   auth_account_info_stream: Array<Auth_Account_Info>;
+  /** fetch data from the table: "auth.account_providers" */
+  auth_account_providers: Array<Auth_Account_Providers>;
+  /** fetch aggregated fields from the table: "auth.account_providers" */
+  auth_account_providers_aggregate: Auth_Account_Providers_Aggregate;
+  /** fetch data from the table: "auth.account_providers" using primary key columns */
+  auth_account_providers_by_pk: Maybe<Auth_Account_Providers>;
+  /** fetch data from the table in a streaming manner: "auth.account_providers" */
+  auth_account_providers_stream: Array<Auth_Account_Providers>;
   /** fetch data from the table: "auth.accounts" */
   auth_accounts: Array<Auth_Accounts>;
   /** fetch aggregated fields from the table: "auth.accounts" */
@@ -823,6 +1122,10 @@ export type Subscription_Root = {
   auth_accounts_by_pk: Maybe<Auth_Accounts>;
   /** fetch data from the table in a streaming manner: "auth.accounts" */
   auth_accounts_stream: Array<Auth_Accounts>;
+  /** execute function "auth.get_me" which returns "auth.accounts" */
+  auth_get_me: Array<Auth_Accounts>;
+  /** execute function "auth.get_me" and query aggregates on result of table type "auth.accounts" */
+  auth_get_me_aggregate: Auth_Accounts_Aggregate;
 };
 
 
@@ -856,6 +1159,36 @@ export type Subscription_RootAuth_Account_Info_StreamArgs = {
 };
 
 
+export type Subscription_RootAuth_Account_ProvidersArgs = {
+  distinct_on: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Account_Providers_Order_By>>;
+  where: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+};
+
+
+export type Subscription_RootAuth_Account_Providers_AggregateArgs = {
+  distinct_on: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Account_Providers_Order_By>>;
+  where: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+};
+
+
+export type Subscription_RootAuth_Account_Providers_By_PkArgs = {
+  id: Scalars['uuid'];
+};
+
+
+export type Subscription_RootAuth_Account_Providers_StreamArgs = {
+  batch_size: Scalars['Int'];
+  cursor: Array<InputMaybe<Auth_Account_Providers_Stream_Cursor_Input>>;
+  where: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+};
+
+
 export type Subscription_RootAuth_AccountsArgs = {
   distinct_on: InputMaybe<Array<Auth_Accounts_Select_Column>>;
   limit: InputMaybe<Scalars['Int']>;
@@ -882,6 +1215,24 @@ export type Subscription_RootAuth_Accounts_By_PkArgs = {
 export type Subscription_RootAuth_Accounts_StreamArgs = {
   batch_size: Scalars['Int'];
   cursor: Array<InputMaybe<Auth_Accounts_Stream_Cursor_Input>>;
+  where: InputMaybe<Auth_Accounts_Bool_Exp>;
+};
+
+
+export type Subscription_RootAuth_Get_MeArgs = {
+  distinct_on: InputMaybe<Array<Auth_Accounts_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Accounts_Order_By>>;
+  where: InputMaybe<Auth_Accounts_Bool_Exp>;
+};
+
+
+export type Subscription_RootAuth_Get_Me_AggregateArgs = {
+  distinct_on: InputMaybe<Array<Auth_Accounts_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Accounts_Order_By>>;
   where: InputMaybe<Auth_Accounts_Bool_Exp>;
 };
 
@@ -924,5 +1275,5 @@ export type GetAccountInfoQueryVariables = Exact<{
 export type GetAccountInfoQuery = { acc: { id: string } | null };
 
 
-export const HealthDocument = {"__meta__":{"op":"query","hash":"901aec55022481249e2efdaa0fb8acf64421d3c3"}} as unknown as DocumentNode<HealthQuery, HealthQueryVariables>;
+export const HealthDocument = {"__meta__":{"op":"query","hash":"d0f5c041756d2dcb9ea6ff7f58665cfd05cc94e1"}} as unknown as DocumentNode<HealthQuery, HealthQueryVariables>;
 export const GetAccountInfoDocument = {"__meta__":{"op":"query","hash":"46179ffd960829f63766551b471fddf6884f2298"}} as unknown as DocumentNode<GetAccountInfoQuery, GetAccountInfoQueryVariables>;

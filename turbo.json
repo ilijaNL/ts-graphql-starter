@@ -9,6 +9,9 @@
       "dependsOn": ["^tc"],
       "outputs": []
     },
+    "test": {
+      "outputs": []
+    },
     "gen": {
       "cache": false
     },

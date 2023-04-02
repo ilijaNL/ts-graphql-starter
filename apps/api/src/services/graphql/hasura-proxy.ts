@@ -11,6 +11,8 @@ import {
   getIntrospectionQuery,
   GraphQLError,
   buildClientSchema,
+  visit,
+  print,
 } from 'graphql';
 import undici, { Pool } from 'undici';
 import G_ENV from './env';
@@ -80,15 +82,18 @@ export type Resolver = (props: {
 export type CustomHandlerFn<R, V> = (this: OpsDef, variables: V, headers: Record<string, unknown>) => Promise<R>;
 
 class OpsDef {
+  private mQuery: string;
+
   constructor(
     public readonly hash: string,
-    public readonly query: string,
-    public readonly document: DocumentNode,
+    private mDocument: DocumentNode,
     public readonly operationType: OperationTypeNode,
     private mRequest: (req: ProxyRequestProps) => Promise<ProxyResponse>,
     private mValidate: ValidateFn<any> | null = null,
     private mCustomHandler: CustomHandlerFn<any, any> | null = null
-  ) {}
+  ) {
+    this.mQuery = print(mDocument);
+  }
 
   public setValidate(validate: ValidateFn<any> | null) {
     this.mValidate = validate?.bind(this) ?? null;
@@ -96,6 +101,19 @@ class OpsDef {
 
   public setCustomHandler(customHandler: CustomHandlerFn<any, any> | null) {
     this.mCustomHandler = customHandler?.bind(this) ?? null;
+  }
+
+  public setDocument(document: DocumentNode) {
+    this.mDocument = document;
+    this.mQuery = print(document);
+  }
+
+  get document() {
+    return this.mDocument;
+  }
+
+  get query() {
+    return this.mQuery;
   }
 
   get customHandler() {
@@ -120,7 +138,7 @@ class OpsDef {
       return response;
     }
 
-    return this.mRequest({ hash: this.hash, headers: props.headers, query: this.query, variables: props.variables });
+    return this.mRequest({ hash: this.hash, headers: props.headers, query: this.mQuery, variables: props.variables });
   }
 }
 
@@ -208,16 +226,46 @@ export function createHasuraProxy(
       throw new Error('could not retrieve operation type from ' + documentText);
     }
 
-    const def = new OpsDef(hash, documentText, doc, type, requestHasura, null, null);
+    const def = new OpsDef(hash, doc, type, requestHasura);
+
+    let cacheTTL = finalOptions.cacheTTL;
 
     // only wrap queries with cache
-    if (def.operationType === OperationTypeNode.QUERY) {
+    if (type === OperationTypeNode.QUERY) {
+      const editedDoc = visit(doc, {
+        Directive: {
+          enter(node) {
+            if (node.name.value === 'pcached') {
+              visit(node, {
+                Argument: {
+                  enter(argNode) {
+                    /* istanbul ignore next */
+                    if (argNode.name.value !== 'ttl') {
+                      return;
+                    }
+                    visit(argNode, {
+                      IntValue: {
+                        enter(intNode) {
+                          cacheTTL = +intNode.value;
+                        },
+                      },
+                    });
+                  },
+                },
+              });
+              // delete this node
+              return null;
+            }
+            return;
+          },
+        },
+      });
       const originalResolve = def.resolve;
       cache.define(
         hash,
         {
           // todo add decorators for caching strategy
-          ttl: finalOptions.cacheTTL ?? 0,
+          ttl: cacheTTL ?? 0,
           serialize: finalOptions.cacheKeySerialize,
         },
         function (...args: Parameters<Resolver>) {
@@ -227,6 +275,7 @@ export function createHasuraProxy(
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       def.resolve = cache[hash]!;
+      def.setDocument(editedDoc);
     }
 
     opsMap.set(hash, def);
@@ -333,8 +382,8 @@ export function createHasuraProxy(
      */
     async request(
       hash: string,
-      variables: Record<string, unknown> | undefined,
-      headers: Record<string, unknown>
+      variables: Record<string, unknown> | undefined = undefined,
+      headers: Record<string, unknown> = {}
     ): Promise<ProxyResponse> {
       const def = opsMap.get(hash);
       if (!def) {
