@@ -1,0 +1,16 @@
+table:
+  name: account_providers
+  schema: auth
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - id
+        - account_id
+        - provider
+        - provider_account_id
+        - updated_at
+        - created_at
+      filter:
+        account_id:
+          _eq: X-Hasura-User-Id

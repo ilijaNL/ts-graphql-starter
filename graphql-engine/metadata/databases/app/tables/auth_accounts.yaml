@@ -1,3 +1,17 @@
 table:
   name: accounts
   schema: auth
+select_permissions:
+  - role: user
+    permission:
+      columns:
+        - disabled
+        - token_version
+        - version
+        - created_at
+        - updated_at
+        - id
+      filter:
+        id:
+          _eq: X-Hasura-User-Id
+      limit: 1

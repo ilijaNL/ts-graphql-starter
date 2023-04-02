@@ -1,0 +1,7 @@
+node_modules/
+*.yaml
+*.yml
+*.env
+*.generated.*
+*.action.ts
+graphql-types.ts

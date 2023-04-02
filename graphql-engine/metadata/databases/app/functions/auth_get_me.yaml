@@ -1,0 +1,6 @@
+function:
+  name: get_me
+  schema: auth
+configuration:
+  custom_root_fields: {}
+  session_argument: hasura_session

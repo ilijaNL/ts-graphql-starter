@@ -12,3 +12,4 @@
   customization:
     naming_convention: hasura-default
   tables: "!include app/tables/tables.yaml"
+  functions: "!include app/functions/functions.yaml"
