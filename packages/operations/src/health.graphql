@@ -1,3 +1,9 @@
 query health {
   __health
 }
+
+query GetAccountInfo($id: uuid!) {
+  acc: auth_account_info_by_pk(id: $id) {
+    id
+  }
+}

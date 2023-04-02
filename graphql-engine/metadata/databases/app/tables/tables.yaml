@@ -1,1 +1,2 @@
-[]
+- "!include auth_account_info.yaml"
+- "!include auth_accounts.yaml"

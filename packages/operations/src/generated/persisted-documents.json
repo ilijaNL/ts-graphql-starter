@@ -1,3 +1,4 @@
 {
-  "901aec55022481249e2efdaa0fb8acf64421d3c3": "query health { __health }"
+  "901aec55022481249e2efdaa0fb8acf64421d3c3": "query health { __health }",
+  "46179ffd960829f63766551b471fddf6884f2298": "query GetAccountInfo($id: uuid!) { acc: auth_account_info_by_pk(id: $id) { id } }"
 }

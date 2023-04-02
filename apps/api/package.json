@@ -11,7 +11,9 @@
     "build": "rimraf dist && tsc",
     "start": "node -r ./bootstrap.js dist/server.js",
     "gen:auth": "kysely-codegen --include-pattern \"(auth).*\" --schema auth --url postgres://postgres:postgres@localhost:5432/app --out-file ./src/services/auth/__generated__/auth-db.d.ts",
-    "test": "tap --node-arg=--require=tsconfig-paths/register --ts --no-cov"
+    "test": "tap --node-arg=--require=tsconfig-paths/register --ts --no-check-coverage",
+    "test:cov": "tap --coverage-report=html --no-check-coverage",
+    "test:watch": "tap -w --node-arg=--require=tsconfig-paths/register --ts"
   },
   "license": "MIT",
   "dependencies": {
@@ -22,9 +24,12 @@
     "@fastify/rate-limit": "^8.0.0",
     "@fastify/sensible": "^5.2.0",
     "@fastify/type-provider-typebox": "^3.0.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
+    "@my-app/operations": "workspace:*",
     "@sinclair/typebox": "^0.26.6",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
+    "async-cache-dedupe": "^1.10.2",
     "date-fns": "^2.25.0",
     "delay": "^5.0.0",
     "dotenv": "^16.0.3",
@@ -32,6 +37,7 @@
     "fastify": "^4.15.0",
     "fastify-plugin": "^4.5.0",
     "grant": "^5.4.21",
+    "graphql": "^16.6.0",
     "http-errors": "^2.0.0",
     "kysely": "^0.24.2",
     "lodash": "^4.17.21",
@@ -46,6 +52,8 @@
     "undici": "^5.21.0"
   },
   "devDependencies": {
+    "@graphql-tools/mock": "^8.7.19",
+    "@graphql-tools/schema": "^9.0.17",
     "@types/http-errors": "^2.0.1",
     "@types/lodash": "^4.14.176",
     "@types/node": "^16.0.0",

@@ -2,6 +2,7 @@ import { CodegenConfig } from '@graphql-codegen/cli';
 import { getOperationAST } from 'graphql';
 
 const sharedConfig = {
+  enumsAsConst: true,
   skipTypename: true,
   avoidOptionals: {
     field: true,
@@ -10,7 +11,6 @@ const sharedConfig = {
     defaultValue: false,
   },
   // avoidOptionals: true,
-  exposeQueryKeys: true,
   scalars: {
     uuid: 'string',
     UUID: 'string',
@@ -18,10 +18,11 @@ const sharedConfig = {
     JSONObject: 'Record<string, any>',
     bigint: 'number',
     timestamptz: 'string',
+    timestampt: 'string',
     time: 'string',
     Date: 'Date',
-    // json: 'Record<string, any> | Array<any>',
-    // jsonb: 'Record<string, any> | Array<any>',
+    json: 'Record<string, any> | Array<any>',
+    jsonb: 'Record<string, any> | Array<any>',
   },
 };
 

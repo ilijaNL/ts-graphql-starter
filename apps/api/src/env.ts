@@ -1,6 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
-
 import { Type } from '@sinclair/typebox';
 import { parseEnvs } from '@/utils/env';
 
