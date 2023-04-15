@@ -1,6 +1,14 @@
 table:
   name: accounts
   schema: auth
+array_relationships:
+  - name: providers
+    using:
+      foreign_key_constraint_on:
+        column: account_id
+        table:
+          name: account_providers
+          schema: auth
 select_permissions:
   - role: user
     permission:

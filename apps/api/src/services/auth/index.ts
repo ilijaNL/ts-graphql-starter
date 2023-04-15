@@ -48,7 +48,7 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
     {
       schema: {
         body: Type.Object({
-          r: Type.String({}),
+          t: Type.String({}),
         }),
         response: {
           '2xx': Type.Object({
@@ -58,7 +58,7 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
       },
     },
     async (req, reply) => {
-      const verifiedToken = verifyRequestToken(req.body.r);
+      const verifiedToken = verifyRequestToken(req.body.t);
 
       if (!verifiedToken) {
         throw fastify.httpErrors.unauthorized('invalid-token');
@@ -101,7 +101,7 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
     {
       schema: {
         body: Type.Object({
-          refresh_token: Type.String({}),
+          rt: Type.String({}),
         }),
         response: {
           '2xx': Type.Object({
@@ -111,7 +111,7 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
       },
     },
     async (request) => {
-      const { refresh_token } = request.body;
+      const { rt: refresh_token } = request.body;
       const idToken = getIdToken(refresh_token);
 
       if (!idToken) {

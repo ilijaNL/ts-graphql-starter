@@ -1,0 +1,8 @@
+[
+  {
+    "behaviour": {},
+    "operationName": "GetMe",
+    "operationType": "query",
+    "query": "query GetMe { me: auth_get_me { id providers { id provider } token_version updated_at } }"
+  }
+]

@@ -14,10 +14,12 @@ export function getAuthURL() {
 }
 
 export function getGraphURL() {
-  const url = new URL(getConfig('API'));
+  /* const url = new URL(getConfig('API'));
   url.pathname = '/graphql';
 
-  return url.toString();
+  return url.toString(); */
+
+  return 'http://localhost:8082/v1/graphql';
 }
 
 export function getImagePath(bucketPath: string) {

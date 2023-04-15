@@ -12,7 +12,7 @@ export default async function refresh(req: NextApiRequest, res: NextApiResponse)
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ refresh_token: refreshCookie }),
+      body: JSON.stringify({ rt: refreshCookie }),
     })
       .then((d) => {
         if (d.status >= 400) {

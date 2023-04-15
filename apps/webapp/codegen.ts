@@ -1,8 +1,6 @@
-import { CodegenConfig } from '@graphql-codegen/cli';
-import { getOperationAST } from 'graphql';
-
+import type { CodegenConfig } from '@graphql-codegen/cli';
 const sharedConfig = {
-  enumsAsConst: true,
+  enumsAsTypes: true,
   skipTypename: true,
   avoidOptionals: {
     field: true,
@@ -37,35 +35,19 @@ const config: CodegenConfig = {
         },
       },
     },
-    // additional schema
-    './graphql.overrides.graphql',
   ],
-  documents: ['src/**/*.graphql'],
+  documents: ['src/**/*.{ts,tsx}'],
+  ignoreNoDocuments: true,
   generates: {
-    './src/generated/': {
+    './src/__generated__/': {
       preset: 'client',
-      presetConfig: {
-        fragmentMasking: false,
-        onExecutableDocumentNode: function (document) {
-          const ast = getOperationAST(document);
-          if (ast?.operation) {
-            return {
-              op: ast.operation,
-            };
-          }
-        },
-        persistedDocuments: {
-          mode: 'replaceDocumentWithHash',
-        },
-      },
       config: {
-        documentMode: 'string',
         ...sharedConfig,
       },
     },
-
-    // config: { ...sharedConfig /* documentMode: 'graphQLTag' */ }
+    './src/__generated__/operations.json': {
+      plugins: ['graphql-operation-list'],
+    },
   },
 };
-
 export default config;

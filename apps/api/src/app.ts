@@ -4,7 +4,6 @@ import fastifyHelmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
 import environment from './env';
 import { authService } from './services/auth';
-import graphqlProxyService from './services/graphql';
 
 const IS_PROD = environment.NODE_ENV === 'production';
 
@@ -27,10 +26,6 @@ const app: FastifyPluginAsync = async (fastify) => {
 
   fastify.register(authService, {
     prefix: '/auth',
-  });
-
-  fastify.register(graphqlProxyService, {
-    prefix: '/graphql',
   });
 
   fastify.get('/_health', (_, reply) => {

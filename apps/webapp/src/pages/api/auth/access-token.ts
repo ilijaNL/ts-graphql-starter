@@ -1,6 +1,6 @@
 import { getAuthURL } from '@/config';
 import { getRefreshCookie } from '@/common/refresh-cookie';
-import type { RequestContext } from '@/common/auth';
+import type { AuthContext } from '@/common/auth';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { match } from 'ts-pattern';
 
@@ -22,16 +22,16 @@ export default async function accessToken(req: NextApiRequest, res: NextApiRespo
   }
 
   try {
-    const context = req.body as RequestContext;
+    const context = req.body as AuthContext;
 
     const request = match(context)
-      .with({ role: 'user' }, () =>
+      .with({ role: 'user' }, (r) =>
         fetch(`${getAuthURL()}/access-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ refresh_token: refreshCookie }),
+          body: JSON.stringify({ rt: refreshCookie, claims: [{ type: 'hasura', role: r.role }] }),
         })
       )
       .with({ role: 'admin' }, () => {

@@ -135,12 +135,11 @@ export type Auth_Account_Info_Bool_Exp = {
 };
 
 /** unique or primary key constraints on table "auth.account_info" */
-export enum Auth_Account_Info_Constraint {
+export type Auth_Account_Info_Constraint =
   /** unique or primary key constraint on columns "account_id" */
-  AccountInfoAccountIdKey = 'account_info_account_id_key',
+  | 'account_info_account_id_key'
   /** unique or primary key constraint on columns "id" */
-  AccountInfoPkey = 'account_info_pkey'
-}
+  | 'account_info_pkey';
 
 /** delete the field or element with specified path (for JSON arrays, negative integers count from the end) */
 export type Auth_Account_Info_Delete_At_Path_Input = {
@@ -229,24 +228,23 @@ export type Auth_Account_Info_Prepend_Input = {
 };
 
 /** select columns of table "auth.account_info" */
-export enum Auth_Account_Info_Select_Column {
+export type Auth_Account_Info_Select_Column =
   /** column name */
-  AccountId = 'account_id',
+  | 'account_id'
   /** column name */
-  AvatarUrl = 'avatar_url',
+  | 'avatar_url'
   /** column name */
-  CreatedAt = 'created_at',
+  | 'created_at'
   /** column name */
-  DisplayName = 'display_name',
+  | 'display_name'
   /** column name */
-  ExtraData = 'extra_data',
+  | 'extra_data'
   /** column name */
-  Id = 'id',
+  | 'id'
   /** column name */
-  Locale = 'locale',
+  | 'locale'
   /** column name */
-  UpdatedAt = 'updated_at'
-}
+  | 'updated_at';
 
 /** input type for updating data in table "auth.account_info" */
 export type Auth_Account_Info_Set_Input = {
@@ -281,24 +279,23 @@ export type Auth_Account_Info_Stream_Cursor_Value_Input = {
 };
 
 /** update columns of table "auth.account_info" */
-export enum Auth_Account_Info_Update_Column {
+export type Auth_Account_Info_Update_Column =
   /** column name */
-  AccountId = 'account_id',
+  | 'account_id'
   /** column name */
-  AvatarUrl = 'avatar_url',
+  | 'avatar_url'
   /** column name */
-  CreatedAt = 'created_at',
+  | 'created_at'
   /** column name */
-  DisplayName = 'display_name',
+  | 'display_name'
   /** column name */
-  ExtraData = 'extra_data',
+  | 'extra_data'
   /** column name */
-  Id = 'id',
+  | 'id'
   /** column name */
-  Locale = 'locale',
+  | 'locale'
   /** column name */
-  UpdatedAt = 'updated_at'
-}
+  | 'updated_at';
 
 export type Auth_Account_Info_Updates = {
   /** append existing jsonb value of filtered columns with new jsonb value */
@@ -333,6 +330,17 @@ export type Auth_Account_Providers_Aggregate = {
   nodes: Array<Auth_Account_Providers>;
 };
 
+export type Auth_Account_Providers_Aggregate_Bool_Exp = {
+  count?: InputMaybe<Auth_Account_Providers_Aggregate_Bool_Exp_Count>;
+};
+
+export type Auth_Account_Providers_Aggregate_Bool_Exp_Count = {
+  arguments?: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
+  distinct?: InputMaybe<Scalars['Boolean']>;
+  filter?: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+  predicate: Int_Comparison_Exp;
+};
+
 /** aggregate fields of "auth.account_providers" */
 export type Auth_Account_Providers_Aggregate_Fields = {
   count: Scalars['Int'];
@@ -345,6 +353,20 @@ export type Auth_Account_Providers_Aggregate_Fields = {
 export type Auth_Account_Providers_Aggregate_FieldsCountArgs = {
   columns: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
   distinct: InputMaybe<Scalars['Boolean']>;
+};
+
+/** order by aggregate values of table "auth.account_providers" */
+export type Auth_Account_Providers_Aggregate_Order_By = {
+  count?: InputMaybe<Order_By>;
+  max?: InputMaybe<Auth_Account_Providers_Max_Order_By>;
+  min?: InputMaybe<Auth_Account_Providers_Min_Order_By>;
+};
+
+/** input type for inserting array relation for remote table "auth.account_providers" */
+export type Auth_Account_Providers_Arr_Rel_Insert_Input = {
+  data: Array<Auth_Account_Providers_Insert_Input>;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Auth_Account_Providers_On_Conflict>;
 };
 
 /** Boolean expression to filter rows from the table "auth.account_providers". All fields are combined with a logical 'AND'. */
@@ -361,14 +383,13 @@ export type Auth_Account_Providers_Bool_Exp = {
 };
 
 /** unique or primary key constraints on table "auth.account_providers" */
-export enum Auth_Account_Providers_Constraint {
+export type Auth_Account_Providers_Constraint =
   /** unique or primary key constraint on columns "id" */
-  AccountProvidersPkey = 'account_providers_pkey',
+  | 'account_providers_pkey'
   /** unique or primary key constraint on columns "provider_account_id", "provider" */
-  AccountProvidersProviderProviderAccountIdKey = 'account_providers_provider_provider_account_id_key',
+  | 'account_providers_provider_provider_account_id_key'
   /** unique or primary key constraint on columns "provider", "account_id" */
-  IdxProvidersAccIdProvider = 'idx_providers_acc_id_provider'
-}
+  | 'idx_providers_acc_id_provider';
 
 /** input type for inserting data into table "auth.account_providers" */
 export type Auth_Account_Providers_Insert_Input = {
@@ -390,6 +411,16 @@ export type Auth_Account_Providers_Max_Fields = {
   updated_at: Maybe<Scalars['timestamptz']>;
 };
 
+/** order by max() on columns of table "auth.account_providers" */
+export type Auth_Account_Providers_Max_Order_By = {
+  account_id?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  provider?: InputMaybe<Order_By>;
+  provider_account_id?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
+};
+
 /** aggregate min on columns */
 export type Auth_Account_Providers_Min_Fields = {
   account_id: Maybe<Scalars['uuid']>;
@@ -398,6 +429,16 @@ export type Auth_Account_Providers_Min_Fields = {
   provider: Maybe<Scalars['String']>;
   provider_account_id: Maybe<Scalars['String']>;
   updated_at: Maybe<Scalars['timestamptz']>;
+};
+
+/** order by min() on columns of table "auth.account_providers" */
+export type Auth_Account_Providers_Min_Order_By = {
+  account_id?: InputMaybe<Order_By>;
+  created_at?: InputMaybe<Order_By>;
+  id?: InputMaybe<Order_By>;
+  provider?: InputMaybe<Order_By>;
+  provider_account_id?: InputMaybe<Order_By>;
+  updated_at?: InputMaybe<Order_By>;
 };
 
 /** response of any mutation on the table "auth.account_providers" */
@@ -431,20 +472,19 @@ export type Auth_Account_Providers_Pk_Columns_Input = {
 };
 
 /** select columns of table "auth.account_providers" */
-export enum Auth_Account_Providers_Select_Column {
+export type Auth_Account_Providers_Select_Column =
   /** column name */
-  AccountId = 'account_id',
+  | 'account_id'
   /** column name */
-  CreatedAt = 'created_at',
+  | 'created_at'
   /** column name */
-  Id = 'id',
+  | 'id'
   /** column name */
-  Provider = 'provider',
+  | 'provider'
   /** column name */
-  ProviderAccountId = 'provider_account_id',
+  | 'provider_account_id'
   /** column name */
-  UpdatedAt = 'updated_at'
-}
+  | 'updated_at';
 
 /** input type for updating data in table "auth.account_providers" */
 export type Auth_Account_Providers_Set_Input = {
@@ -475,20 +515,19 @@ export type Auth_Account_Providers_Stream_Cursor_Value_Input = {
 };
 
 /** update columns of table "auth.account_providers" */
-export enum Auth_Account_Providers_Update_Column {
+export type Auth_Account_Providers_Update_Column =
   /** column name */
-  AccountId = 'account_id',
+  | 'account_id'
   /** column name */
-  CreatedAt = 'created_at',
+  | 'created_at'
   /** column name */
-  Id = 'id',
+  | 'id'
   /** column name */
-  Provider = 'provider',
+  | 'provider'
   /** column name */
-  ProviderAccountId = 'provider_account_id',
+  | 'provider_account_id'
   /** column name */
-  UpdatedAt = 'updated_at'
-}
+  | 'updated_at';
 
 export type Auth_Account_Providers_Updates = {
   /** sets the columns of the filtered rows to the given values */
@@ -502,9 +541,33 @@ export type Auth_Accounts = {
   created_at: Scalars['timestamptz'];
   disabled: Scalars['Boolean'];
   id: Scalars['uuid'];
+  /** An array relationship */
+  providers: Array<Auth_Account_Providers>;
+  /** An aggregate relationship */
+  providers_aggregate: Auth_Account_Providers_Aggregate;
   token_version: Scalars['Int'];
   updated_at: Scalars['timestamptz'];
   version: Scalars['Int'];
+};
+
+
+/** columns and relationships of "auth.accounts" */
+export type Auth_AccountsProvidersArgs = {
+  distinct_on: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Account_Providers_Order_By>>;
+  where: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+};
+
+
+/** columns and relationships of "auth.accounts" */
+export type Auth_AccountsProviders_AggregateArgs = {
+  distinct_on: InputMaybe<Array<Auth_Account_Providers_Select_Column>>;
+  limit: InputMaybe<Scalars['Int']>;
+  offset: InputMaybe<Scalars['Int']>;
+  order_by: InputMaybe<Array<Auth_Account_Providers_Order_By>>;
+  where: InputMaybe<Auth_Account_Providers_Bool_Exp>;
 };
 
 /** aggregated selection of "auth.accounts" */
@@ -549,16 +612,17 @@ export type Auth_Accounts_Bool_Exp = {
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   disabled?: InputMaybe<Boolean_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
+  providers?: InputMaybe<Auth_Account_Providers_Bool_Exp>;
+  providers_aggregate?: InputMaybe<Auth_Account_Providers_Aggregate_Bool_Exp>;
   token_version?: InputMaybe<Int_Comparison_Exp>;
   updated_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   version?: InputMaybe<Int_Comparison_Exp>;
 };
 
 /** unique or primary key constraints on table "auth.accounts" */
-export enum Auth_Accounts_Constraint {
+export type Auth_Accounts_Constraint =
   /** unique or primary key constraint on columns "id" */
-  AccountsPkey = 'accounts_pkey'
-}
+  | 'accounts_pkey';
 
 /** input type for incrementing numeric columns in table "auth.accounts" */
 export type Auth_Accounts_Inc_Input = {
@@ -571,6 +635,7 @@ export type Auth_Accounts_Insert_Input = {
   created_at?: InputMaybe<Scalars['timestamptz']>;
   disabled?: InputMaybe<Scalars['Boolean']>;
   id?: InputMaybe<Scalars['uuid']>;
+  providers?: InputMaybe<Auth_Account_Providers_Arr_Rel_Insert_Input>;
   token_version?: InputMaybe<Scalars['Int']>;
   updated_at?: InputMaybe<Scalars['timestamptz']>;
   version?: InputMaybe<Scalars['Int']>;
@@ -614,6 +679,7 @@ export type Auth_Accounts_Order_By = {
   created_at?: InputMaybe<Order_By>;
   disabled?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  providers_aggregate?: InputMaybe<Auth_Account_Providers_Aggregate_Order_By>;
   token_version?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
   version?: InputMaybe<Order_By>;
@@ -625,20 +691,19 @@ export type Auth_Accounts_Pk_Columns_Input = {
 };
 
 /** select columns of table "auth.accounts" */
-export enum Auth_Accounts_Select_Column {
+export type Auth_Accounts_Select_Column =
   /** column name */
-  CreatedAt = 'created_at',
+  | 'created_at'
   /** column name */
-  Disabled = 'disabled',
+  | 'disabled'
   /** column name */
-  Id = 'id',
+  | 'id'
   /** column name */
-  TokenVersion = 'token_version',
+  | 'token_version'
   /** column name */
-  UpdatedAt = 'updated_at',
+  | 'updated_at'
   /** column name */
-  Version = 'version'
-}
+  | 'version';
 
 /** input type for updating data in table "auth.accounts" */
 export type Auth_Accounts_Set_Input = {
@@ -693,20 +758,19 @@ export type Auth_Accounts_Sum_Fields = {
 };
 
 /** update columns of table "auth.accounts" */
-export enum Auth_Accounts_Update_Column {
+export type Auth_Accounts_Update_Column =
   /** column name */
-  CreatedAt = 'created_at',
+  | 'created_at'
   /** column name */
-  Disabled = 'disabled',
+  | 'disabled'
   /** column name */
-  Id = 'id',
+  | 'id'
   /** column name */
-  TokenVersion = 'token_version',
+  | 'token_version'
   /** column name */
-  UpdatedAt = 'updated_at',
+  | 'updated_at'
   /** column name */
-  Version = 'version'
-}
+  | 'version';
 
 export type Auth_Accounts_Updates = {
   /** increments the numeric columns with given value of the filtered values */
@@ -736,12 +800,11 @@ export type Auth_Accounts_Variance_Fields = {
 };
 
 /** ordering argument of a cursor */
-export enum Cursor_Ordering {
+export type Cursor_Ordering =
   /** ascending ordering of the cursor */
-  Asc = 'ASC',
+  | 'ASC'
   /** descending ordering of the cursor */
-  Desc = 'DESC'
-}
+  | 'DESC';
 
 export type Jsonb_Cast_Exp = {
   String?: InputMaybe<String_Comparison_Exp>;
@@ -797,7 +860,6 @@ export type Mutation_Root = {
   insert_auth_accounts: Maybe<Auth_Accounts_Mutation_Response>;
   /** insert a single row into the table: "auth.accounts" */
   insert_auth_accounts_one: Maybe<Auth_Accounts>;
-  noop: Scalars['Boolean'];
   /** update data of the table: "auth.account_info" */
   update_auth_account_info: Maybe<Auth_Account_Info_Mutation_Response>;
   /** update single row of the table: "auth.account_info" */
@@ -969,23 +1031,21 @@ export type Mutation_RootUpdate_Auth_Accounts_ManyArgs = {
 };
 
 /** column ordering options */
-export enum Order_By {
+export type Order_By =
   /** in ascending order, nulls last */
-  Asc = 'asc',
+  | 'asc'
   /** in ascending order, nulls first */
-  AscNullsFirst = 'asc_nulls_first',
+  | 'asc_nulls_first'
   /** in ascending order, nulls last */
-  AscNullsLast = 'asc_nulls_last',
+  | 'asc_nulls_last'
   /** in descending order, nulls first */
-  Desc = 'desc',
+  | 'desc'
   /** in descending order, nulls first */
-  DescNullsFirst = 'desc_nulls_first',
+  | 'desc_nulls_first'
   /** in descending order, nulls last */
-  DescNullsLast = 'desc_nulls_last'
-}
+  | 'desc_nulls_last';
 
 export type Query_Root = {
-  __health: Scalars['Boolean'];
   /** fetch data from the table: "auth.account_info" */
   auth_account_info: Array<Auth_Account_Info>;
   /** fetch aggregated fields from the table: "auth.account_info" */
@@ -1262,18 +1322,10 @@ export type Uuid_Comparison_Exp = {
   _nin?: InputMaybe<Array<Scalars['uuid']>>;
 };
 
-export type HealthQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetMeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type HealthQuery = { __health: boolean };
-
-export type GetAccountInfoQueryVariables = Exact<{
-  id: Scalars['uuid'];
-}>;
+export type GetMeQuery = { me: Array<{ id: string, token_version: number, updated_at: string, providers: Array<{ id: string, provider: string }> }> };
 
 
-export type GetAccountInfoQuery = { acc: { id: string } | null };
-
-
-export const HealthDocument = {"__meta__":{"op":"query","hash":"d0f5c041756d2dcb9ea6ff7f58665cfd05cc94e1"}} as unknown as DocumentNode<HealthQuery, HealthQueryVariables>;
-export const GetAccountInfoDocument = {"__meta__":{"op":"query","hash":"46179ffd960829f63766551b471fddf6884f2298"}} as unknown as DocumentNode<GetAccountInfoQuery, GetAccountInfoQueryVariables>;
+export const GetMeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMe"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"me"},"name":{"kind":"Name","value":"auth_get_me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"token_version"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"providers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}}]}}]}}]}}]} as unknown as DocumentNode<GetMeQuery, GetMeQueryVariables>;

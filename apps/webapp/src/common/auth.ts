@@ -13,14 +13,14 @@ interface UserContext {
   role: 'user';
 }
 
-export type RequestContext = UserContext | AdminContext;
+export type AuthContext = UserContext | AdminContext;
 
 /**
  * To improve this, sort the keys first and then stringify
  * @param context
  * @returns
  */
-function getKey(context: RequestContext): string {
+function getKey(context: AuthContext): string {
   return stringify(context);
 }
 
@@ -29,7 +29,7 @@ function setAccessToken(key: string, tokenPromise: Promise<string>) {
   keyCache.put(key, tokenPromise, 60_000 * 5);
 }
 
-export const getAuthHeaders = async (context: RequestContext) => {
+export const getAuthHeaders = async (context: AuthContext) => {
   const key = getKey(context);
   let tokenPromise = keyCache.get(key);
 
@@ -62,7 +62,7 @@ export const requestSignInEmail = async (email: string) => {
   });
 };
 
-export async function fetchAccessToken(context: RequestContext): Promise<string> {
+export async function fetchAccessToken(context: AuthContext): Promise<string> {
   const res = await fetch(`/api/auth/access-token`, {
     method: 'POST',
     credentials: 'same-origin',

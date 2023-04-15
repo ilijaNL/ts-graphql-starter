@@ -7,7 +7,7 @@ export default async function acquire(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const payload = JSON.stringify({
-      request_token: req.query.request_token as string,
+      t: req.query.request_token as string,
     });
     const result = await fetch(`${getAuthURL()}/redeem`, {
       method: 'POST',
@@ -35,6 +35,7 @@ export default async function acquire(req: NextApiRequest, res: NextApiResponse)
   } catch (e) {
     // catch per error basic, and then redirect accordingly
     console.log({ e });
+    return res.redirect('/login');
   }
 
   if (req.method === 'POST') {
@@ -44,7 +45,7 @@ export default async function acquire(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'GET') {
-    return res.redirect('/');
+    return res.redirect('/account');
   }
 
   return res.status(404).send('not-allowed');

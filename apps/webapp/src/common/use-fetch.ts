@@ -7,43 +7,47 @@ import {
   UseQueryOptions,
   UseQueryResult,
 } from '@tanstack/react-query';
-import { authFetch, graphqlDocFetch } from './remote-client';
-import { RequestContext } from './auth';
+import { AuthContext, getAuthHeaders } from './auth';
+import { getGraphURL } from '@/config';
+import { Variables as ReqVariables, GraphQLClient } from 'graphql-request';
+import { Kind, type OperationDefinitionNode } from 'graphql';
 
-export const isFunction = (v: any): v is () => any => typeof v == 'function';
+const graphqlClient = new GraphQLClient(getGraphURL());
 
-type Falsy = false | 0 | '' | null | undefined;
+export function extractOperationName(documentNode: TypedDocumentNode<any, any>): string {
+  return documentNode.definitions
+    .filter(
+      (definition): definition is OperationDefinitionNode =>
+        definition.kind === Kind.OPERATION_DEFINITION && !!definition.name
+    )
+    .map((d) => d.name)
+    .join('_');
+}
 
-export const getKeyFromDocument = (documentNode: TypedDocumentNode<any, any>): string => {
-  if ((documentNode as any).__meta__?.hash) {
-    return (documentNode as any).__meta__.hash;
-  }
-
-  throw new Error('documentNode does not have a hash, is this generated?');
+export const authFetch = async <TData, TVariables extends ReqVariables | undefined>(
+  doc: TypedDocumentNode<TData, TVariables>,
+  variables: TVariables,
+  context: AuthContext
+) => {
+  const authHeaders = await getAuthHeaders(context);
+  return graphqlClient.request(doc, variables, authHeaders);
 };
 
-type Variables<TVars> = TVars | (() => TVars);
-
-export function useQuery<TQueryFnData = unknown, TVars = unknown, TError = unknown, TData = TQueryFnData>(
+export function useQuery<
+  TQueryFnData = unknown,
+  TVars extends ReqVariables | undefined = ReqVariables,
+  TError = unknown,
+  TData = TQueryFnData
+>(
   documentNode: TypedDocumentNode<TQueryFnData, TVars>,
-  varsOrVarsFn: Variables<TVars | Falsy>,
+  variables: TVars,
   options?: UseQueryOptions<TQueryFnData, TError, TData>
 ): UseQueryResult<TData, TError> {
-  let variables: TVars | Falsy;
-
-  // if it throws, disable the query
-  // this is a dependent query thens
-  try {
-    variables = isFunction(varsOrVarsFn) ? varsOrVarsFn() : varsOrVarsFn;
-  } catch (e) {
-    variables = false;
-  }
-
   const disabled = options?.enabled === false || !variables;
   // construct key
-  const key = [getKeyFromDocument(documentNode), variables] as const;
+  const key = [extractOperationName(documentNode), variables] as const;
 
-  return _useQuery(key as QueryKey, () => graphqlDocFetch(documentNode, variables as TVars), {
+  return _useQuery(key as QueryKey, () => graphqlClient.request(documentNode, variables), {
     ...options,
     enabled: !disabled,
   });
@@ -58,49 +62,54 @@ export function useQuery<TQueryFnData = unknown, TVars = unknown, TError = unkno
  * @param headers additional headers which will be sent with the request
  * @returns
  */
-export function useAuthQuery<TQueryFnData = unknown, TVars = unknown, TError = unknown, TData = TQueryFnData>(
+export function useAuthQuery<
+  TQueryFnData = unknown,
+  TVars extends ReqVariables | undefined = ReqVariables,
+  TError = unknown,
+  TData = TQueryFnData
+>(
   documentNode: TypedDocumentNode<TQueryFnData, TVars>,
-  varsOrVarsFn: Variables<TVars | Falsy>,
-  context: RequestContext,
+  variables: TVars,
+  authContext: AuthContext,
   options?: UseQueryOptions<TQueryFnData, TError, TData>
 ): UseQueryResult<TData, TError> {
-  let variables: TVars | Falsy;
-
-  // if it throws, disable the query
-  // this is a dependent query thens
-  try {
-    variables = isFunction(varsOrVarsFn) ? varsOrVarsFn() : varsOrVarsFn;
-  } catch (e) {
-    variables = false;
-  }
-
   const disabled = options?.enabled === false || !variables;
   // construct key
-  const key = [getKeyFromDocument(documentNode), variables, context] as const;
+  const key = [extractOperationName(documentNode), variables, authContext] as const;
 
-  return _useQuery(key as QueryKey, () => authFetch(documentNode, variables as TVars, context), {
+  return _useQuery(key as QueryKey, () => authFetch(documentNode, variables as TVars, authContext), {
     ...options,
     enabled: !disabled,
   });
 }
 
-export const useUserQuery = <TQueryFnData = unknown, TVars = unknown, TError = unknown, TData = TQueryFnData>(
+export const useUserQuery = <
+  TQueryFnData = unknown,
+  TVars extends ReqVariables | undefined = ReqVariables,
+  TError = unknown,
+  TData = TQueryFnData
+>(
   documentNode: TypedDocumentNode<TQueryFnData, TVars>,
-  varsOrVarsFn: Variables<TVars | Falsy>,
+  variables: TVars,
   options?: UseQueryOptions<TQueryFnData, TError, TData>
-) => useAuthQuery(documentNode, varsOrVarsFn, { role: 'user' }, options);
+) => useAuthQuery(documentNode, variables, { role: 'user' }, options);
 
-export const useAdminQuery = <TQueryFnData = unknown, TVars = unknown, TError = unknown, TData = TQueryFnData>(
+export const useAdminQuery = <
+  TQueryFnData = unknown,
+  TVars extends ReqVariables | undefined = ReqVariables,
+  TError = unknown,
+  TData = TQueryFnData
+>(
   documentNode: TypedDocumentNode<TQueryFnData, TVars>,
-  varsOrVarsFn: Variables<TVars | Falsy>,
+  variables: TVars,
   options?: UseQueryOptions<TQueryFnData, TError, TData>
-) => useAuthQuery(documentNode, varsOrVarsFn, { role: 'admin' }, options);
+) => useAuthQuery(documentNode, variables, { role: 'admin' }, options);
 
-export const useMutation = <TData, TVars, TError = unknown>(
+export const useMutation = <TData, TVars extends ReqVariables | undefined = ReqVariables, TError = unknown>(
   documentNode: TypedDocumentNode<TData, TVars>,
   options?: UseMutationOptions<TData, TError, TVars>
 ) => {
-  return _useMutation((payload: TVars) => graphqlDocFetch(documentNode, payload as TVars), options);
+  return _useMutation((payload: TVars) => graphqlClient.request(documentNode, payload), options);
 };
 
 /**
@@ -110,9 +119,9 @@ export const useMutation = <TData, TVars, TError = unknown>(
  * @param headers additional headers which will be sent with the request
  * @returns
  */
-export const useAuthMutation = <TData, TVars, TError = unknown>(
+export const useAuthMutation = <TData, TVars extends ReqVariables | undefined = ReqVariables, TError = unknown>(
   documentNode: TypedDocumentNode<TData, TVars>,
-  context: RequestContext,
+  context: AuthContext,
   options?: UseMutationOptions<TData, TError, TVars>
 ) => {
   return _useMutation((payload: TVars) => authFetch(documentNode, payload as TVars, context), options);

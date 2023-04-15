@@ -1,3 +1,4 @@
+import getConfig from '@/config';
 import { serialize, CookieSerializeOptions } from 'cookie';
 import type { NextApiRequest, NextApiResponse } from 'next/types';
 
@@ -25,7 +26,7 @@ export const setCookie = (res: NextApiResponse, name: string, value: unknown, op
  * if custom domain, we create cookie for *.customdomain.com
  */
 const getCookieDomain = (req: NextApiRequest) => {
-  const ROOT_HOST = new URL(process.env.NEXT_APP_ROOT_DOMAIN!);
+  const ROOT_HOST = new URL(getConfig('BASE_DOMAIN'));
   // check if root domain
   const host = req.headers['host'] ?? 'app.localhost:3000';
 

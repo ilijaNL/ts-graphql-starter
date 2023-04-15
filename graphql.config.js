@@ -8,6 +8,5 @@ module.exports = {
         }
       }
     },
-    './packages/operations/graphql.overrides.graphql',
   ]
 };

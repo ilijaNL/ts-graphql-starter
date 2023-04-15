@@ -13,7 +13,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel or swc plugin for production.
  */
 const documents = {
-    "query health @pcached(ttl: 60) {\n  __health\n}\n\nquery GetAccountInfo($id: uuid!) {\n  acc: auth_account_info_by_pk(id: $id) {\n    id\n  }\n}": types.HealthDocument,
+    "\n  query GetMe {\n    me: auth_get_me {\n      id\n      token_version\n      updated_at\n      providers {\n        id\n        provider\n      }\n    }\n  }\n": types.GetMeDocument,
 };
 
 /**
@@ -33,7 +33,7 @@ export function graphql(source: string): unknown;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "query health @pcached(ttl: 60) {\n  __health\n}\n\nquery GetAccountInfo($id: uuid!) {\n  acc: auth_account_info_by_pk(id: $id) {\n    id\n  }\n}"): (typeof documents)["query health @pcached(ttl: 60) {\n  __health\n}\n\nquery GetAccountInfo($id: uuid!) {\n  acc: auth_account_info_by_pk(id: $id) {\n    id\n  }\n}"];
+export function graphql(source: "\n  query GetMe {\n    me: auth_get_me {\n      id\n      token_version\n      updated_at\n      providers {\n        id\n        provider\n      }\n    }\n  }\n"): (typeof documents)["\n  query GetMe {\n    me: auth_get_me {\n      id\n      token_version\n      updated_at\n      providers {\n        id\n        provider\n      }\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
