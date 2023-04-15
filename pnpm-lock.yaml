@@ -215,6 +215,9 @@ importers:
       graphql:
         specifier: ^16.6.0
         version: 16.6.0
+      graphql-ops-proxy:
+        specifier: ^0.0.5
+        version: 0.0.5
       graphql-request:
         specifier: ^6.0.0
         version: 6.0.0(graphql@16.6.0)
@@ -4817,6 +4820,10 @@ packages:
       '@graphql-tools/documents': 0.1.0(graphql@16.6.0)
       graphql: 16.6.0
     dev: true
+
+  /graphql-ops-proxy@0.0.5:
+    resolution: {integrity: sha512-rP83toTxgG+mBij2yut+2HCqb0lJSWmO1FClZ2SsNDWgr+t+4USshFV7EGIFRY8OADqpm/9fFVW7OeKaDckOpQ==}
+    dev: false
 
   /graphql-request@6.0.0(graphql@16.6.0):
     resolution: {integrity: sha512-2BmHTuglonjZvmNVw6ZzCfFlW/qkIPds0f+Qdi/Lvjsl3whJg2uvHmSvHnLWhUTEw6zcxPYAHiZoPvSVKOZ7Jw==}

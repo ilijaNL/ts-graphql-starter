@@ -26,6 +26,7 @@
     "date-fns": "^2.25.0",
     "dotenv-safe": "^8.2.0",
     "graphql": "^16.6.0",
+    "graphql-ops-proxy": "^0.0.5",
     "graphql-request": "^6.0.0",
     "next": "13.2.4",
     "react": "18.2.0",

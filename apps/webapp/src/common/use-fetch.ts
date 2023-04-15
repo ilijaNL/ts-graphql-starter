@@ -8,11 +8,17 @@ import {
   UseQueryResult,
 } from '@tanstack/react-query';
 import { AuthContext, getAuthHeaders } from './auth';
-import { getGraphURL } from '@/config';
 import { Variables as ReqVariables, GraphQLClient } from 'graphql-request';
 import { Kind, type OperationDefinitionNode } from 'graphql';
 
-const graphqlClient = new GraphQLClient(getGraphURL());
+const graphqlClient = new GraphQLClient('/api/graphql', {
+  requestMiddleware(request) {
+    return {
+      ...request,
+      body: JSON.stringify({ op: request.operationName, v: request.variables }),
+    };
+  },
+});
 
 export function extractOperationName(documentNode: TypedDocumentNode<any, any>): string {
   return documentNode.definitions

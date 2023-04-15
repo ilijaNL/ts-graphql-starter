@@ -13,14 +13,7 @@ export function getAuthURL() {
   return url.toString();
 }
 
-export function getGraphURL() {
-  /* const url = new URL(getConfig('API'));
-  url.pathname = '/graphql';
-
-  return url.toString(); */
-
-  return 'http://localhost:8082/v1/graphql';
-}
+export const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT as string;
 
 export function getImagePath(bucketPath: string) {
   const url = new URL(getConfig('CDN'));
