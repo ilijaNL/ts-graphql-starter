@@ -13,6 +13,7 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Therefore it is highly recommended to use the babel or swc plugin for production.
  */
 const documents = {
+    "mutation RefreshToken($token: String!) {\n  auth {\n    refresh(rt: $token)\n  }\n}\n\nmutation Redeem($token: String!) {\n  auth {\n    redeem(token: $token)\n  }\n}\n\nmutation AccessToken($claims: [Auth_Claim!]!, $token: String!) {\n  auth {\n    accessToken(claims: $claims, rt: $token)\n  }\n}": types.RefreshTokenDocument,
     "\n  query GetMe {\n    me: auth_get_me {\n      id\n      token_version\n      updated_at\n      providers {\n        id\n        provider\n      }\n    }\n  }\n": types.GetMeDocument,
 };
 
@@ -30,6 +31,10 @@ const documents = {
  */
 export function graphql(source: string): unknown;
 
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "mutation RefreshToken($token: String!) {\n  auth {\n    refresh(rt: $token)\n  }\n}\n\nmutation Redeem($token: String!) {\n  auth {\n    redeem(token: $token)\n  }\n}\n\nmutation AccessToken($claims: [Auth_Claim!]!, $token: String!) {\n  auth {\n    accessToken(claims: $claims, rt: $token)\n  }\n}"): (typeof documents)["mutation RefreshToken($token: String!) {\n  auth {\n    refresh(rt: $token)\n  }\n}\n\nmutation Redeem($token: String!) {\n  auth {\n    redeem(token: $token)\n  }\n}\n\nmutation AccessToken($claims: [Auth_Claim!]!, $token: String!) {\n  auth {\n    accessToken(claims: $claims, rt: $token)\n  }\n}"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

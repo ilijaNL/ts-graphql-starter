@@ -8,27 +8,9 @@ import {
   UseQueryResult,
 } from '@tanstack/react-query';
 import { AuthContext, getAuthHeaders } from './auth';
-import { Variables as ReqVariables, GraphQLClient } from 'graphql-request';
-import { Kind, type OperationDefinitionNode } from 'graphql';
+import { extractOperationName, proxyFetch } from './graphql-fetch';
 
-const graphqlClient = new GraphQLClient('/api/graphql', {
-  requestMiddleware(request) {
-    return {
-      ...request,
-      body: JSON.stringify({ op: request.operationName, v: request.variables }),
-    };
-  },
-});
-
-export function extractOperationName(documentNode: TypedDocumentNode<any, any>): string {
-  return documentNode.definitions
-    .filter(
-      (definition): definition is OperationDefinitionNode =>
-        definition.kind === Kind.OPERATION_DEFINITION && !!definition.name
-    )
-    .map((d) => d.name)
-    .join('_');
-}
+export type ReqVariables = Record<string, unknown>;
 
 export const authFetch = async <TData, TVariables extends ReqVariables | undefined>(
   doc: TypedDocumentNode<TData, TVariables>,
@@ -36,7 +18,7 @@ export const authFetch = async <TData, TVariables extends ReqVariables | undefin
   context: AuthContext
 ) => {
   const authHeaders = await getAuthHeaders(context);
-  return graphqlClient.request(doc, variables, authHeaders);
+  return proxyFetch(doc, variables, authHeaders);
 };
 
 export function useQuery<
@@ -53,7 +35,7 @@ export function useQuery<
   // construct key
   const key = [extractOperationName(documentNode), variables] as const;
 
-  return _useQuery(key as QueryKey, () => graphqlClient.request(documentNode, variables), {
+  return _useQuery(key as QueryKey, () => proxyFetch(documentNode, variables), {
     ...options,
     enabled: !disabled,
   });
@@ -115,7 +97,7 @@ export const useMutation = <TData, TVars extends ReqVariables | undefined = ReqV
   documentNode: TypedDocumentNode<TData, TVars>,
   options?: UseMutationOptions<TData, TError, TVars>
 ) => {
-  return _useMutation((payload: TVars) => graphqlClient.request(documentNode, payload), options);
+  return _useMutation((payload: TVars) => proxyFetch(documentNode, payload), options);
 };
 
 /**

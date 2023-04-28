@@ -2,6 +2,12 @@ version: '3.8'
 services:
   postgres:
     image: timescale/timescaledb-ha:pg14-latest
+    healthcheck:
+      test:
+          - CMD-SHELL
+          - pg_isready -U postgres -d postgres -q
+      interval: 3s
+      start_period: 2m0s
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: app
@@ -22,7 +28,8 @@ services:
       - '8082:8080'
     restart: on-failure
     depends_on:
-      - postgres
+      postgres:
+          condition: service_healthy
     networks:
       - ts-graphql-starter
     environment:
@@ -32,14 +39,15 @@ services:
       PG_DATABASE_URL: postgres://postgres:postgres@postgres:5432/app
       HASURA_GRAPHQL_ADMIN_SECRET: admin12345
       HASURA_GRAPHQL_ENABLE_TELEMETRY: false
-      ## "$['graphql']"
-      HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256","key":"c9c4ad92-dc28-4928-99f8-689c391bd277","claims_namespace_path":"$$.graphql","allowed_skew": 30}'
       ## enable the console served by server
       HASURA_GRAPHQL_ENABLE_CONSOLE: false # set to "false" to disable console
-      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anonymous
       ## enable debugging mode. It is recommended to disable this in production
       HASURA_GRAPHQL_DEV_MODE: true
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log
+      HASURA_GRAPHQL_ENABLE_REMOTE_SCHEMA_PERMISSIONS: true
+      # services that are needed
+      AUTH_SERVER: http://host.docker.internal:3001/auth
+      HASURA_GRAPHQL_AUTH_HOOK: http://host.docker.internal:3001/p/hasura/claims
   minio:
     image: minio/minio
     ports:

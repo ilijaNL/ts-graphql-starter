@@ -2,13 +2,14 @@ import path from 'path';
 import ENVS from '@/env';
 import { migrate } from '@/utils/migration';
 import { registerPool } from '@/utils/plugins/pg-pool';
-import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox';
+import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { DB } from './__generated__/auth-db';
 import { QueryCreator } from 'kysely';
 import { registerKysely } from '@/utils/plugins/kysely';
 import { oauth } from './oauth';
-import { createIDToken, getIdToken, signIDToken, verifyRequestToken } from './common';
-import { access_token } from './access-token';
+import { authProcedures } from './service';
+import { createYoga } from 'graphql-yoga';
+import { GraphQLContext, builder } from './graphql';
 
 export type AuthQueryBuilder = QueryCreator<DB>;
 
@@ -33,11 +34,6 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
 
   await registerKysely(fastify, { namespace: 'db_auth', schema: dbSchema });
 
-  // ROUTES REGISTRATION
-
-  /**
-   * oAuth providers
-   */
   fastify.register(oauth);
 
   /**
@@ -47,49 +43,14 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
     '/redeem',
     {
       schema: {
-        body: Type.Object({
-          t: Type.String({}),
-        }),
+        body: authProcedures.redeem.def.input,
         response: {
-          '2xx': Type.Object({
-            refreshToken: Type.String(),
-          }),
+          '2xx': authProcedures.redeem.def.output,
         },
       },
     },
-    async (req, reply) => {
-      const verifiedToken = verifyRequestToken(req.body.t);
-
-      if (!verifiedToken) {
-        throw fastify.httpErrors.unauthorized('invalid-token');
-      }
-
-      // get account
-      const account = await fastify.db_auth
-        .selectFrom('account_providers as ap')
-        .innerJoin('accounts as aa', 'aa.id', 'ap.account_id')
-        .select(['aa.id', 'aa.token_version'])
-        .where('ap.provider', '=', verifiedToken.provider)
-        .where('ap.provider_account_id', '=', verifiedToken.p_account_id)
-        .executeTakeFirst();
-
-      if (!account) {
-        return reply.notFound();
-      }
-
-      const refreshToken = createIDToken({
-        provider: {
-          n: verifiedToken.provider,
-          p_id: verifiedToken.p_account_id,
-        },
-        sub: account.id,
-        account_id: account.id,
-        token_version: account.token_version,
-      });
-
-      return {
-        refreshToken: signIDToken(refreshToken),
-      };
+    (req) => {
+      return authProcedures.redeem.execute(req.body, { fastify });
     }
   );
 
@@ -100,54 +61,55 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
     '/refresh',
     {
       schema: {
-        body: Type.Object({
-          rt: Type.String({}),
-        }),
+        body: authProcedures.refresh.def.input,
         response: {
-          '2xx': Type.Object({
-            refreshToken: Type.String(),
-          }),
+          '2xx': authProcedures.refresh.def.output,
         },
       },
     },
-    async (request) => {
-      const { rt: refresh_token } = request.body;
-      const idToken = getIdToken(refresh_token);
-
-      if (!idToken) {
-        throw fastify.httpErrors.unauthorized('invalid-token');
-      }
-
-      // check if allowed to refresh
-      // AND get account
-      const account = await fastify.db_auth
-        .selectFrom('account_providers as ap')
-        .innerJoin('accounts as aa', 'aa.id', 'ap.account_id')
-        .select(['aa.id', 'aa.token_version'])
-        .where('aa.id', '=', idToken.account_id)
-        .where('aa.token_version', '=', idToken.token_version)
-        // optional to check if provider still exists
-        .where('ap.provider', '=', idToken.provider.n)
-        .where('ap.provider_account_id', '=', idToken.provider.p_id)
-        .executeTakeFirst();
-
-      // check if refresh token is same as in token
-      if (!account) {
-        throw fastify.httpErrors.forbidden('invalid-token');
-      }
-
-      const refreshToken = createIDToken({
-        provider: idToken.provider,
-        sub: account.id,
-        account_id: account.id,
-        token_version: account.token_version,
-      });
-
-      return {
-        refreshToken: signIDToken(refreshToken),
-      };
+    (request) => {
+      return authProcedures.refresh.execute(request.body, { fastify });
     }
   );
 
-  fastify.register(access_token);
+  fastify.post(
+    '/access-token',
+    {
+      schema: {
+        body: authProcedures['access-token'].def.input,
+        response: {
+          '2xx': authProcedures['access-token'].def.output,
+        },
+      },
+    },
+    (req) => {
+      return authProcedures['access-token'].execute(req.body, { fastify });
+    }
+  );
+
+  // add graphql schema
+  const server = createYoga<GraphQLContext>({
+    schema: builder.toSchema(),
+    landingPage: false,
+    graphqlEndpoint: '/auth/graphql',
+  });
+
+  fastify.route({
+    url: '/graphql',
+    method: ['GET', 'POST', 'OPTIONS'],
+    handler: async (req, reply) => {
+      const response = await server.handleNodeRequest(req, {
+        fastify: fastify,
+      });
+
+      response.headers.forEach((value, key) => {
+        reply.header(key, value);
+      });
+
+      reply.status(response.status);
+      reply.send(response.body);
+
+      return reply;
+    },
+  });
 };

@@ -22,4 +22,6 @@ export function getImagePath(bucketPath: string) {
   return url.toString();
 }
 
-export const BRAND_NAME = 'EventBoss';
+export const GATEWAY_HEADERS = {
+  'x-gateway-secret': process.env.GATEWAY_SECRET as string,
+} as const;

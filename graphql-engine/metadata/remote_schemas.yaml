@@ -1,1 +1,30 @@
-[]
+- name: Auth
+  definition:
+    url: '{{AUTH_SERVER}}/graphql'
+    timeout_seconds: 30
+    customization:
+      root_fields_namespace: auth
+      type_names:
+        mapping: {}
+        prefix: Auth_
+  comment: ""
+  permissions:
+    - role: anonymous
+      definition:
+        schema: |
+          schema {
+            query: Query
+            mutation: Mutation
+          }
+          type Mutation {
+            accessToken(claims: [Claim!]!, rt: String!): String!
+            redeem(token: String!): String!
+            refresh(rt: String!): String!
+          }
+          type Query {
+            health: Boolean!
+          }
+          input Claim {
+            role: String!
+            type: String!
+          }

@@ -1,4 +1,4 @@
-import { useUserQuery } from './use-fetch';
+import { useUserQuery } from './use-query';
 // import { MeDocument, MeQuery } from '@/__generated__/user/documents';
 import { createContext, useMemo, useContext, PropsWithChildren, useEffect } from 'react';
 import { keyCache, refresh, signOut as signOutRemote } from './auth';

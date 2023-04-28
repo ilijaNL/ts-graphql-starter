@@ -1,4 +1,3 @@
-import { FastifyRequest } from 'fastify';
 import { createVerifier, createSigner } from 'fast-jwt';
 // import createHttpError from 'http-errors';
 import AUTH_ENVS from './env';
@@ -51,9 +50,7 @@ const REFRESH_TOKEN_SECRET = AUTH_ENVS.REFRESH_TOKEN_SECRET;
 const JWT_ACCESS_TOKEN_EXPIRATION_TIME = parseInt(AUTH_ENVS.JWT_ACCESS_TOKEN_EXPIRATION_TIME);
 const JWT_TOKEN_SECRET = AUTH_ENVS.ACCESS_TOKEN_SECRET;
 
-const ISS = AUTH_ENVS.AUTH_NAME;
-
-const verifyJwt = createVerifier({ cache: true, key: JWT_TOKEN_SECRET, allowedIss: [ISS] });
+const ISS = 'auth';
 
 const _verifyRequestToken = createVerifier({
   key: REFRESH_TOKEN_SECRET,
@@ -82,7 +79,7 @@ const _signAccessToken = createSigner({
 export type AccessToken = {
   acc_id: string;
   sub: string;
-};
+} & Record<string, unknown>;
 
 export function signAccessToken(token: AccessToken) {
   return _signAccessToken(token);
@@ -100,15 +97,6 @@ const _signRequestToken = createSigner({
 
 export function signRequestToken(token: RequestToken) {
   return _signRequestToken(token);
-}
-
-export function getUserAuthFromRequest(request: FastifyRequest): AccessToken | null {
-  try {
-    const verifiedToken = verifyJwt((request.headers.authorization ?? '').replace('Bearer ', '')) as AccessToken;
-    return verifiedToken;
-  } catch (e) {
-    return null;
-  }
 }
 
 export const createIDToken = (payload: IdToken): IdToken => payload;

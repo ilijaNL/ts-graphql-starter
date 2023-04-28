@@ -1,6 +1,24 @@
 [
   {
     "behaviour": {},
+    "operationName": "RefreshToken",
+    "operationType": "mutation",
+    "query": "mutation RefreshToken($token: String!) { auth { refresh(rt: $token) } }"
+  },
+  {
+    "behaviour": {},
+    "operationName": "Redeem",
+    "operationType": "mutation",
+    "query": "mutation Redeem($token: String!) { auth { redeem(token: $token) } }"
+  },
+  {
+    "behaviour": {},
+    "operationName": "AccessToken",
+    "operationType": "mutation",
+    "query": "mutation AccessToken($claims: [Auth_Claim!]!, $token: String!) { auth { accessToken(claims: $claims, rt: $token) } }"
+  },
+  {
+    "behaviour": {},
     "operationName": "GetMe",
     "operationType": "query",
     "query": "query GetMe { me: auth_get_me { id providers { id provider } token_version updated_at } }"

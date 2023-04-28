@@ -4,6 +4,7 @@ import fastifyHelmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
 import environment from './env';
 import { authService } from './services/auth';
+import { proxyService } from './services/proxy';
 
 const IS_PROD = environment.NODE_ENV === 'production';
 
@@ -23,6 +24,10 @@ const app: FastifyPluginAsync = async (fastify) => {
   }
 
   await fastify.register(sensible);
+
+  fastify.register(proxyService, {
+    prefix: '/p',
+  });
 
   fastify.register(authService, {
     prefix: '/auth',

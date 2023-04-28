@@ -2,6 +2,9 @@ import { getAuthURL } from '@/config';
 import TinyCache from './tiny-cache';
 // @ts-ignore
 import stringify from 'safe-stable-stringify';
+import { AccessTokenDocument } from '@/__generated__/graphql';
+import { match } from 'ts-pattern';
+import { proxyFetch } from './graphql-fetch';
 
 export const keyCache = new TinyCache<string, Promise<string>>();
 
@@ -62,22 +65,34 @@ export const requestSignInEmail = async (email: string) => {
   });
 };
 
-export async function fetchAccessToken(context: AuthContext): Promise<string> {
-  const res = await fetch(`/api/auth/access-token`, {
-    method: 'POST',
+async function fetchAccessToken(context: AuthContext): Promise<string> {
+  const claim = match(context)
+    .with({ role: 'user' }, (r) => ({ type: 'hasura', role: r.role }))
+    .with({ role: 'admin' }, () => {
+      throw new Error('admin access token not implemented in ' + __dirname);
+    })
+    .exhaustive();
+
+  const refreshToken = await fetch('/api/id-token', {
+    method: 'GET',
     credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(context),
+  }).then((d) => d.text());
+
+  if (!refreshToken) {
+    throw new Error('un-authorized');
+  }
+
+  // use /api/auth so we get cookie
+  const result = await proxyFetch(AccessTokenDocument, {
+    claims: [claim],
+    token: refreshToken,
   });
 
-  if (res.status === 401) {
+  if (!result.auth?.accessToken) {
     throw new Error('unauthorized');
   }
 
-  const response = await res.json();
-  return response.access_token;
+  return result.auth?.accessToken;
 }
 
 export const supported_providers = {
@@ -90,25 +105,21 @@ type Providers = typeof supported_providers[keyof typeof supported_providers];
 export const redirectOAuth = (provider: Providers) => {
   return (window.location.href = `${getAuthURL()}/signin/${provider}?redirectUrl=${
     window.location.origin
-  }/api/auth/acquire`);
+  }/__authorized`);
 };
 
 export const refresh = async () => {
-  return fetch(`/api/auth/refresh`, {
+  return fetch(`/api/id-token`, {
     method: 'POST',
     credentials: 'same-origin',
-  }).then((d) => d.json());
+  });
 };
 
 // we need here to redirect
 export const signOut = () =>
-  fetch(`/api/auth/logout`, {
-    method: 'POST',
+  fetch('/api/id-token', {
+    method: 'DELETE',
     credentials: 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({}),
   }).then(() => {
     window.location.href = `${window.location.origin}/`;
   });

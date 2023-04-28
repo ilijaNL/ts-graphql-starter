@@ -36,7 +36,7 @@ const config: CodegenConfig = {
       },
     },
   ],
-  documents: ['src/**/*.{ts,tsx}'],
+  documents: ['src/**/*.{ts,tsx,graphql}'],
   ignoreNoDocuments: true,
   generates: {
     './src/__generated__/': {

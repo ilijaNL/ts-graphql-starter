@@ -20,6 +20,7 @@
     "gen": "turbo run gen",
     "start:engine": "docker-compose up",
     "hasura": "hasura --skip-update-check --project ./graphql-engine",
+    "hasura:metadata:apply": "pnpm run hasura metadata apply",
     "console": "pnpm run hasura console",
     "metadata:apply": "pnpm run hasura metadata apply"
   },
