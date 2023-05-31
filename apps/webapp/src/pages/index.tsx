@@ -1,9 +1,9 @@
-import { createWrapper } from '@/common/factories/wrapper';
+import { createPage } from '@/common/wrapper';
 import { routes } from '@/routes';
 import { Button, Container } from '@mantine/core';
 import Link from 'next/link';
 
-const page = createWrapper({
+const page = createPage({
   pageComponent: function Home() {
     return (
       <>

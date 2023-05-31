@@ -1,9 +1,12 @@
-import { createProcedures, createRPC } from '@/utils/rpc';
-import { Static, Type } from '@sinclair/typebox';
+import { createProcedures } from '@/utils/rpc';
 import { FastifyInstance } from 'fastify';
 import { AccessToken, createIDToken, getIdToken, signAccessToken, signIDToken, verifyRequestToken } from './common';
 import { isError, toResult } from '@/utils/utils';
 import _merge from 'lodash/merge';
+import { auth, Static } from '@ts-hasura-starter/api';
+import { Pool } from 'pg';
+import { QueryCreator } from 'kysely';
+import { DB } from './__generated__/auth-db';
 
 // Same as defined in HASURA_GRAPHQL_JWT_SECRET environment for hasura
 const hasuraNamespace = 'hg';
@@ -11,69 +14,34 @@ const defaultHasuraRole = 'user';
 
 type AccessTokenExtension = (
   baseToken: AccessToken,
-  claim: Static<typeof authContract['access-token']['input']>['claims'][number]
+  claim: Static<typeof auth.contract['access-token']['input']>['claims'][number]
 ) => AccessToken | Promise<AccessToken>;
 
-const hasuraUserExtensions: AccessTokenExtension = (token, claim) => {
+const hasuraUserRoleExtensions: AccessTokenExtension = (token, claim) => {
   if (!(claim.type === 'hasura' && claim.role === 'user')) {
     return token;
   }
 
-  // todo check if users has role
   return _merge(token, {
     [hasuraNamespace]: {
-      // 'X-Hasura-Default-Role': defaultHasuraRole,
-      // 'X-Hasura-Allowed-Roles': [defaultHasuraRole],
-      role: defaultHasuraRole,
-      'user-id': token.acc_id,
+      'X-Hasura-Default-Role': defaultHasuraRole,
+      'X-Hasura-Allowed-Roles': [defaultHasuraRole],
+      'x-hasura-user-id': token.acc_id,
     },
   });
 };
 
 // add more extensions to add more claims
-const EXTENSIONS: Array<AccessTokenExtension> = [hasuraUserExtensions];
+const EXTENSIONS: Array<AccessTokenExtension> = [hasuraUserRoleExtensions];
 
-const authContract = createRPC({
-  redeem: {
-    input: Type.Object({
-      t: Type.String({}),
-    }),
-    output: Type.Object({
-      refreshToken: Type.String(),
-    }),
-  },
-  refresh: {
-    input: Type.Object({
-      rt: Type.String({}),
-    }),
-    output: Type.Object({
-      refreshToken: Type.String(),
-    }),
-  },
-  'access-token': {
-    input: Type.Object({
-      rt: Type.String({
-        minLength: 10,
-      }),
-      claims: Type.Array(
-        Type.Union([
-          Type.Object({
-            type: Type.String(),
-            role: Type.String(),
-          }),
-        ])
-      ),
-    }),
-    output: Type.Object({
-      access_token: Type.String(),
-    }),
-  },
-});
-
-export const authProcedures = createProcedures(authContract)<{
+export type ProcedureContext = {
   fastify: FastifyInstance;
-}>({
-  async redeem({ t }, { fastify }) {
+  pool: Pool;
+  builder: QueryCreator<DB>;
+};
+
+export const authProcedures = createProcedures(auth.contract)<ProcedureContext>({
+  async redeem({ t }, { fastify, builder }) {
     const verifiedToken = verifyRequestToken(t);
 
     if (!verifiedToken) {
@@ -81,7 +49,7 @@ export const authProcedures = createProcedures(authContract)<{
     }
 
     // get account
-    const account = await fastify.db_auth
+    const account = await builder
       .selectFrom('account_providers as ap')
       .innerJoin('accounts as aa', 'aa.id', 'ap.account_id')
       .select(['aa.id', 'aa.token_version'])
@@ -107,7 +75,7 @@ export const authProcedures = createProcedures(authContract)<{
       refreshToken: signIDToken(refreshToken),
     };
   },
-  async refresh({ rt }, { fastify }) {
+  async refresh({ rt }, { fastify, builder }) {
     const refresh_token = rt;
     const idToken = getIdToken(refresh_token);
 
@@ -117,7 +85,7 @@ export const authProcedures = createProcedures(authContract)<{
 
     // check if allowed to refresh
     // AND get account
-    const account = await fastify.db_auth
+    const account = await builder
       .selectFrom('account_providers as ap')
       .innerJoin('accounts as aa', 'aa.id', 'ap.account_id')
       .select(['aa.id', 'aa.token_version'])
@@ -144,7 +112,7 @@ export const authProcedures = createProcedures(authContract)<{
       refreshToken: signIDToken(refreshToken),
     };
   },
-  async 'access-token'(input, { fastify }) {
+  async 'access-token'(input, { fastify, builder }) {
     const { rt: refresh_token, claims } = input;
     const idToken = getIdToken(refresh_token);
 
@@ -159,7 +127,7 @@ export const authProcedures = createProcedures(authContract)<{
     }
 
     const userOrError = await toResult(
-      fastify.db_auth
+      builder
         .selectFrom('accounts')
         .select('id')
         .where('id', '=', account_id)

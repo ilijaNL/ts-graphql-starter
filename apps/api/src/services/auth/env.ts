@@ -5,6 +5,7 @@ const AUTH_ENV = parseEnvs(
   Type.Object({
     AUTH_URL: Type.String({ format: 'uri' }),
     ENCRYPTION_KEY: Type.String({ minLength: 32 }),
+    COOKIE_SECRET: Type.String({ minLength: 12 }),
     JWT_REFRESH_TOKEN_EXPIRATION_TIME: Type.String(),
     REFRESH_TOKEN_SECRET: Type.String({ minLength: 16 }),
     JWT_ACCESS_TOKEN_EXPIRATION_TIME: Type.String(),

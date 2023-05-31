@@ -2,6 +2,7 @@ import { createVerifier, createSigner } from 'fast-jwt';
 // import createHttpError from 'http-errors';
 import AUTH_ENVS from './env';
 import createHttpError from 'http-errors';
+import { domainIsAllowed } from '@/domains';
 
 export type Provider = 'email' | 'github' | 'twitter' | 'google' | 'linkedin' | 'microsoft';
 
@@ -11,10 +12,7 @@ export type Provider = 'email' | 'github' | 'twitter' | 'google' | 'linkedin' | 
  * @returns
  */
 export async function assertRedirect(url: string) {
-  const _url = new URL(url);
-
-  // Validate the url, currently all redirects are allowed to any domains
-  if (_url) {
+  if (await domainIsAllowed(url)) {
     return true;
   }
 

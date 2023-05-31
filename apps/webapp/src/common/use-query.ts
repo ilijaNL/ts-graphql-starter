@@ -82,17 +82,6 @@ export const useUserQuery = <
   options?: UseQueryOptions<TQueryFnData, TError, TData>
 ) => useAuthQuery(documentNode, variables, { role: 'user' }, options);
 
-export const useAdminQuery = <
-  TQueryFnData = unknown,
-  TVars extends ReqVariables | undefined = ReqVariables,
-  TError = unknown,
-  TData = TQueryFnData
->(
-  documentNode: TypedDocumentNode<TQueryFnData, TVars>,
-  variables: TVars,
-  options?: UseQueryOptions<TQueryFnData, TError, TData>
-) => useAuthQuery(documentNode, variables, { role: 'admin' }, options);
-
 export const useMutation = <TData, TVars extends ReqVariables | undefined = ReqVariables, TError = unknown>(
   documentNode: TypedDocumentNode<TData, TVars>,
   options?: UseMutationOptions<TData, TError, TVars>

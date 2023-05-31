@@ -17,11 +17,6 @@ export type Scalars = {
   uuid: string;
 };
 
-export type Auth_Claim = {
-  role: Scalars['String'];
-  type: Scalars['String'];
-};
-
 /** Boolean expression to compare columns of type "Boolean". All fields are combined with logical 'AND'. */
 export type Boolean_Comparison_Exp = {
   _eq?: InputMaybe<Scalars['Boolean']>;
@@ -79,32 +74,6 @@ export type String_Comparison_Exp = {
   _regex?: InputMaybe<Scalars['String']>;
   /** does the column match the given SQL regular expression */
   _similar?: InputMaybe<Scalars['String']>;
-};
-
-export type AuthMutation = {
-  accessToken: Scalars['String'];
-  redeem: Scalars['String'];
-  refresh: Scalars['String'];
-};
-
-
-export type AuthMutationAccessTokenArgs = {
-  claims: Array<Auth_Claim>;
-  rt: Scalars['String'];
-};
-
-
-export type AuthMutationRedeemArgs = {
-  token: Scalars['String'];
-};
-
-
-export type AuthMutationRefreshArgs = {
-  rt: Scalars['String'];
-};
-
-export type AuthQuery = {
-  health: Scalars['Boolean'];
 };
 
 /** columns and relationships of "auth.account_info" */
@@ -227,6 +196,13 @@ export type Auth_Account_Info_Mutation_Response = {
   affected_rows: Scalars['Int'];
   /** data from the rows affected by the mutation */
   returning: Array<Auth_Account_Info>;
+};
+
+/** input type for inserting object relation for remote table "auth.account_info" */
+export type Auth_Account_Info_Obj_Rel_Insert_Input = {
+  data: Auth_Account_Info_Insert_Input;
+  /** upsert condition */
+  on_conflict?: InputMaybe<Auth_Account_Info_On_Conflict>;
 };
 
 /** on_conflict condition type for table "auth.account_info" */
@@ -572,6 +548,8 @@ export type Auth_Accounts = {
   created_at: Scalars['timestamptz'];
   disabled: Scalars['Boolean'];
   id: Scalars['uuid'];
+  /** An object relationship */
+  info: Maybe<Auth_Account_Info>;
   /** An array relationship */
   providers: Array<Auth_Account_Providers>;
   /** An aggregate relationship */
@@ -643,6 +621,7 @@ export type Auth_Accounts_Bool_Exp = {
   created_at?: InputMaybe<Timestamptz_Comparison_Exp>;
   disabled?: InputMaybe<Boolean_Comparison_Exp>;
   id?: InputMaybe<Uuid_Comparison_Exp>;
+  info?: InputMaybe<Auth_Account_Info_Bool_Exp>;
   providers?: InputMaybe<Auth_Account_Providers_Bool_Exp>;
   providers_aggregate?: InputMaybe<Auth_Account_Providers_Aggregate_Bool_Exp>;
   token_version?: InputMaybe<Int_Comparison_Exp>;
@@ -666,6 +645,7 @@ export type Auth_Accounts_Insert_Input = {
   created_at?: InputMaybe<Scalars['timestamptz']>;
   disabled?: InputMaybe<Scalars['Boolean']>;
   id?: InputMaybe<Scalars['uuid']>;
+  info?: InputMaybe<Auth_Account_Info_Obj_Rel_Insert_Input>;
   providers?: InputMaybe<Auth_Account_Providers_Arr_Rel_Insert_Input>;
   token_version?: InputMaybe<Scalars['Int']>;
   updated_at?: InputMaybe<Scalars['timestamptz']>;
@@ -710,6 +690,7 @@ export type Auth_Accounts_Order_By = {
   created_at?: InputMaybe<Order_By>;
   disabled?: InputMaybe<Order_By>;
   id?: InputMaybe<Order_By>;
+  info?: InputMaybe<Auth_Account_Info_Order_By>;
   providers_aggregate?: InputMaybe<Auth_Account_Providers_Aggregate_Order_By>;
   token_version?: InputMaybe<Order_By>;
   updated_at?: InputMaybe<Order_By>;
@@ -867,7 +848,6 @@ export type Jsonb_Comparison_Exp = {
 
 /** mutation root */
 export type Mutation_Root = {
-  auth: Maybe<AuthMutation>;
   /** delete data from the table: "auth.account_info" */
   delete_auth_account_info: Maybe<Auth_Account_Info_Mutation_Response>;
   /** delete single row from the table: "auth.account_info" */
@@ -1078,7 +1058,6 @@ export type Order_By =
   | 'desc_nulls_last';
 
 export type Query_Root = {
-  auth: Maybe<AuthQuery>;
   /** fetch data from the table: "auth.account_info" */
   auth_account_info: Array<Auth_Account_Info>;
   /** fetch aggregated fields from the table: "auth.account_info" */
@@ -1355,35 +1334,10 @@ export type Uuid_Comparison_Exp = {
   _nin?: InputMaybe<Array<Scalars['uuid']>>;
 };
 
-export type RefreshTokenMutationVariables = Exact<{
-  token: Scalars['String'];
-}>;
-
-
-export type RefreshTokenMutation = { auth: { refresh: string } | null };
-
-export type RedeemMutationVariables = Exact<{
-  token: Scalars['String'];
-}>;
-
-
-export type RedeemMutation = { auth: { redeem: string } | null };
-
-export type AccessTokenMutationVariables = Exact<{
-  claims: Array<Auth_Claim> | Auth_Claim;
-  token: Scalars['String'];
-}>;
-
-
-export type AccessTokenMutation = { auth: { accessToken: string } | null };
-
 export type GetMeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetMeQuery = { me: Array<{ id: string, token_version: number, updated_at: string, providers: Array<{ id: string, provider: string }> }> };
+export type GetMeQuery = { me: Array<{ id: string, token_version: number, updated_at: string, providers: Array<{ id: string, provider: string }>, info: { locale: string, id: string, display_name: string } | null }> };
 
 
-export const RefreshTokenDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RefreshToken"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"token"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"auth"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"refresh"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"rt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"token"}}}]}]}}]}}]} as unknown as DocumentNode<RefreshTokenMutation, RefreshTokenMutationVariables>;
-export const RedeemDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"Redeem"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"token"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"auth"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"redeem"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"token"},"value":{"kind":"Variable","name":{"kind":"Name","value":"token"}}}]}]}}]}}]} as unknown as DocumentNode<RedeemMutation, RedeemMutationVariables>;
-export const AccessTokenDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AccessToken"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"claims"}},"type":{"kind":"NonNullType","type":{"kind":"ListType","type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Auth_Claim"}}}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"token"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"auth"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accessToken"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"claims"},"value":{"kind":"Variable","name":{"kind":"Name","value":"claims"}}},{"kind":"Argument","name":{"kind":"Name","value":"rt"},"value":{"kind":"Variable","name":{"kind":"Name","value":"token"}}}]}]}}]}}]} as unknown as DocumentNode<AccessTokenMutation, AccessTokenMutationVariables>;
-export const GetMeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMe"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"me"},"name":{"kind":"Name","value":"auth_get_me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"token_version"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"providers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}}]}}]}}]}}]} as unknown as DocumentNode<GetMeQuery, GetMeQueryVariables>;
+export const GetMeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMe"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"me"},"name":{"kind":"Name","value":"auth_get_me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"token_version"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"providers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}}]}},{"kind":"Field","name":{"kind":"Name","value":"info"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"display_name"}}]}}]}}]}}]} as unknown as DocumentNode<GetMeQuery, GetMeQueryVariables>;

@@ -34,13 +34,16 @@ export const createCookie = (name: string, value: unknown, options: CookieSerial
   return serialize(name, stringValue, options);
 };
 
+const BASE_DOMAIN = process.env.NEXT_APP_BASE_DOMAIN!;
+
 /**
  * If we on a subdomain such as componya.app.com, we return a wildcard domain *.app.com
  * if custom domain, we create cookie for *.customdomain.com
  */
 const getCookieDomain = (req: Request) => {
-  const ROOT_HOST = new URL(process.env.NEXT_APP_BASE_DOMAIN!);
   // check if root domain
+  const ROOT_HOST = new URL(BASE_DOMAIN);
+
   const host = req.headers.get('host') ?? 'app.localhost:3000';
 
   const domain = host.replace(`.${ROOT_HOST.host}`, '');

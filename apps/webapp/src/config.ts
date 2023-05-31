@@ -1,16 +1,9 @@
 import env from '@beam-australia/react-env';
 
-type EnvKeys = 'API' | 'CDN' | 'BASE_DOMAIN';
+type EnvKeys = 'API' | 'CDN' | 'BASE_DOMAIN' | 'AUTH_ENDPOINT';
 
 export default function getConfig(key: EnvKeys) {
   return env(key);
-}
-
-export function getAuthURL() {
-  const url = new URL(getConfig('API'));
-  url.pathname = '/auth';
-
-  return url.toString();
 }
 
 export const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT as string;
@@ -22,6 +15,4 @@ export function getImagePath(bucketPath: string) {
   return url.toString();
 }
 
-export const GATEWAY_HEADERS = {
-  'x-gateway-secret': process.env.GATEWAY_SECRET as string,
-} as const;
+export const BRAND_NAME = 'ts-starter-graphql';

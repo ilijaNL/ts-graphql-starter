@@ -1,14 +1,14 @@
-import type { NextPage } from 'next';
 import Head from 'next/head';
 import type { AppProps } from 'next/app';
+import type { TPage } from '@/common/wrapper';
 
 type EnhancedAppProps = AppProps & {
-  Component: NextPage;
+  Component: TPage<any>;
 };
 
 const App: React.FC<EnhancedAppProps> = (appProps) => {
   const { Component, pageProps } = appProps;
-  const getWrapper = (Component as any).getWrapper ?? ((page: React.ReactNode) => page);
+  const getWrapper = Component.getWrapper ?? ((page: React.ReactNode) => page);
 
   return (
     <>
@@ -16,7 +16,7 @@ const App: React.FC<EnhancedAppProps> = (appProps) => {
         <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
       </Head>
 
-      {getWrapper(<Component {...pageProps} />)}
+      {getWrapper(<Component {...pageProps} />, pageProps)}
     </>
   );
 };

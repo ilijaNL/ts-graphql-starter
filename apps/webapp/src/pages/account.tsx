@@ -1,11 +1,11 @@
 import { signOut } from '@/common/auth';
-import { createWrapper } from '@/common/factories/wrapper';
+import { createAuthPage } from '@/common/wrapper';
 import { useSession } from '@/common/session';
 import { Button, Container } from '@mantine/core';
 import Router from 'next/router';
 import { useEffect } from 'react';
 
-const page = createWrapper({
+const page = createAuthPage({
   pageComponent: function Accout() {
     const { isLoading, user } = useSession();
 

@@ -1,11 +1,11 @@
-import { createWrapper } from '@/common/factories/wrapper';
+import { createPage } from '@/common/wrapper';
 import { useSessionRedirect } from '@/common/session';
 import { GithubIcon } from '@mantine/ds';
 import { TextInput, Text, Paper, Group, Button, Divider, Stack, Container } from '@mantine/core';
 import { useForm } from 'react-hook-form';
 import { redirectOAuth } from '@/common/auth';
 
-const page = createWrapper({
+const page = createPage({
   pageComponent: function Login() {
     // redirect to account when in session
     useSessionRedirect((session) => {

@@ -1,22 +1,26 @@
-import { getAuthURL } from '@/config';
 import TinyCache from './tiny-cache';
 // @ts-ignore
 import stringify from 'safe-stable-stringify';
-import { AccessTokenDocument } from '@/__generated__/graphql';
 import { match } from 'ts-pattern';
-import { proxyFetch } from './graphql-fetch';
+import { ExecuteFn, createRPCExecute } from './rpc/execute';
+import { MutationKeys, QueryKeys } from './rpc/hooks';
+import {
+  useMutation as _useMutation,
+  UseMutationOptions,
+  useQuery as _useQuery,
+  UseQueryOptions,
+} from '@tanstack/react-query';
+import getClientConfig from '@/config';
+import { auth } from '@ts-hasura-starter/api';
+import { InferInput, InferOutput, RPCContract } from '@ts-hasura-starter/rpc';
 
 export const keyCache = new TinyCache<string, Promise<string>>();
-
-interface AdminContext {
-  role: 'admin';
-}
 
 interface UserContext {
   role: 'user';
 }
 
-export type AuthContext = UserContext | AdminContext;
+export type AuthContext = UserContext;
 
 /**
  * To improve this, sort the keys first and then stringify
@@ -49,7 +53,7 @@ export const getAuthHeaders = async (context: AuthContext) => {
 };
 
 export const requestSignInEmail = async (email: string) => {
-  return fetch(`${getAuthURL()}/signin/email`, {
+  return fetch(`${getClientConfig('AUTH_ENDPOINT')}/signin/email`, {
     method: 'POST',
     mode: 'cors',
     headers: {
@@ -68,9 +72,6 @@ export const requestSignInEmail = async (email: string) => {
 async function fetchAccessToken(context: AuthContext): Promise<string> {
   const claim = match(context)
     .with({ role: 'user' }, (r) => ({ type: 'hasura', role: r.role }))
-    .with({ role: 'admin' }, () => {
-      throw new Error('admin access token not implemented in ' + __dirname);
-    })
     .exhaustive();
 
   const refreshToken = await fetch('/api/id-token', {
@@ -82,28 +83,29 @@ async function fetchAccessToken(context: AuthContext): Promise<string> {
     throw new Error('un-authorized');
   }
 
-  // use /api/auth so we get cookie
-  const result = await proxyFetch(AccessTokenDocument, {
+  const authExecute = createRPCExecute(auth.contract, getClientConfig('AUTH_ENDPOINT'));
+
+  const { access_token } = await authExecute('access-token', {
     claims: [claim],
-    token: refreshToken,
+    rt: refreshToken,
   });
 
-  if (!result.auth?.accessToken) {
+  if (!access_token) {
     throw new Error('unauthorized');
   }
 
-  return result.auth?.accessToken;
+  return access_token;
 }
 
 export const supported_providers = {
   google: 'google',
-  twitter: 'twitter',
+  github: 'github',
 } as const;
 
 type Providers = typeof supported_providers[keyof typeof supported_providers];
 
 export const redirectOAuth = (provider: Providers) => {
-  return (window.location.href = `${getAuthURL()}/signin/${provider}?redirectUrl=${
+  return (window.location.href = `${getClientConfig('AUTH_ENDPOINT')}/signin/${provider}?redirectUrl=${
     window.location.origin
   }/__authorized`);
 };
@@ -123,3 +125,31 @@ export const signOut = () =>
   }).then(() => {
     window.location.href = `${window.location.origin}/`;
   });
+
+export function createAuthHooks<TContract extends RPCContract>(executeFn: ExecuteFn<TContract>) {
+  function useMutation<T extends keyof TContract>(
+    context: AuthContext,
+    method: T extends MutationKeys<TContract> ? T : never,
+    options?: Omit<UseMutationOptions<InferOutput<TContract[T]>, any, InferOutput<TContract[T]>>, 'mutationFn'>
+  ) {
+    return _useMutation(async (input: InferInput<TContract[T]>) => {
+      const headers = await getAuthHeaders(context);
+      return executeFn(method, input, headers);
+    }, options);
+  }
+
+  function useQuery<T extends keyof TContract>(
+    context: AuthContext,
+    method: T extends QueryKeys<TContract> ? T : never,
+    input: InferInput<TContract[T]>,
+    options?: Omit<UseQueryOptions<InferOutput<TContract[T]>>, 'queryKey' | 'queryFn'>
+  ) {
+    const key = [executeFn.url, context, method, input] as const;
+    return _useQuery(key, async () => executeFn(method, input, await getAuthHeaders(context)), options);
+  }
+
+  return {
+    useMutation,
+    useQuery,
+  };
+}

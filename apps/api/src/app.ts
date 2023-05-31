@@ -2,9 +2,10 @@ import { FastifyPluginAsync, FastifyServerOptions, RouteOptions } from 'fastify'
 import fp from 'fastify-plugin';
 import fastifyHelmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
+import cors from '@fastify/cors';
 import environment from './env';
 import { authService } from './services/auth';
-import { proxyService } from './services/proxy';
+import { domainIsAllowed } from './domains';
 
 const IS_PROD = environment.NODE_ENV === 'production';
 
@@ -12,6 +13,31 @@ const app: FastifyPluginAsync = async (fastify) => {
   if (IS_PROD) {
     await fastify.register(fastifyHelmet);
   }
+
+  await fastify.register(cors, {
+    credentials: true,
+    // if not set, the requested headers are allowed
+    // allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      domainIsAllowed(origin)
+        .then((isAllowed) => {
+          if (isAllowed) {
+            return callback(null, true);
+          }
+
+          callback(new Error('Not allowed'), false);
+        })
+        .catch(() => {
+          callback(new Error('Not allowed'), false);
+        });
+    },
+  });
 
   if (!IS_PROD) {
     await fastify.register(
@@ -25,10 +51,7 @@ const app: FastifyPluginAsync = async (fastify) => {
 
   await fastify.register(sensible);
 
-  fastify.register(proxyService, {
-    prefix: '/p',
-  });
-
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   fastify.register(authService, {
     prefix: '/auth',
   });

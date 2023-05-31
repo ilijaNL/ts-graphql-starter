@@ -10,7 +10,7 @@ export function createData<T extends TSchema>(_: T, data: Static<T>) {
   return data;
 }
 
-const ajv = addFormats(new Ajv({}), [
+export const ajv = addFormats(new Ajv({}), [
   'date-time',
   'time',
   'date',

@@ -1,4 +1,3 @@
-import { RefreshTokenDocument } from '@/__generated__/graphql';
 import {
   createClearCookie,
   createCookie,
@@ -7,8 +6,9 @@ import {
   refreshCookieKey,
   refreshCookiePath,
 } from '@/common/edge';
-import { graphqlDocFetch } from '@/common/graphql-fetch';
-import { GRAPHQL_ENDPOINT } from '@/config';
+import { createRPCExecute } from '@/common/rpc/execute';
+import getConfig from '@/config';
+import { auth } from '@ts-hasura-starter/api';
 
 export const config = {
   runtime: 'edge',
@@ -20,14 +20,15 @@ function getRefreshToken(req: Request) {
   return refreshToken;
 }
 
+// nneed to define this since not embedded during build time
+const AUTH_URL = getConfig('AUTH_ENDPOINT');
+
 async function getNewToken(currentToken: string): Promise<string> {
-  return graphqlDocFetch(GRAPHQL_ENDPOINT, RefreshTokenDocument, {
-    token: currentToken,
-  })
-    .then((d) => d.auth?.refresh ?? '')
-    .catch((_err) => {
-      return '';
-    });
+  const executeFn = createRPCExecute(auth.contract, AUTH_URL);
+
+  return executeFn('refresh', { rt: currentToken })
+    .then((d) => d.refreshToken ?? '')
+    .catch(() => '');
 }
 
 export default async function handler(req: Request) {

@@ -1,17 +1,28 @@
 import { ColorScheme, ColorSchemeProvider, MantineProvider } from '@mantine/core';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PropsWithChildren, /* useEffect, */ useRef } from 'react';
+import { PropsWithChildren, ReactElement, /* useEffect, */ useRef } from 'react';
 import { useColorScheme, useLocalStorage } from '@mantine/hooks';
-import { AuthProvider } from '../session';
+import { AuthProvider } from './session';
+import AuthGuard from './components/auth-guard';
+import { Notifications } from '@mantine/notifications';
+import { routes } from '@/routes';
+import { createPageLayout } from './layout';
+import { ModalsProvider } from '@mantine/modals';
 
-export type TPageProps<PageProps> = {
-  pageComponent: React.FC<PageProps>;
+export type TPageProps<PageProps extends { [key: string]: any }> = {
+  pageComponent: (props: PageProps) => ReactElement<any, any> | null;
+  /**
+   * Set the props of NextSEO plugin, see https://github.com/garmeeh/next-seo.
+   *
+   * Props are only defined when using getStaticProps or getServersideProps
+   */
+  // nextSeoProps?: (props: PageProps) => NextSeoProps;
   layout?: (props: { children: JSX.Element }) => JSX.Element;
 };
 
-export type TPage = {
-  (props: any): JSX.Element;
-  getWrapper(children: JSX.Element): JSX.Element;
+export type TPage<PageProps extends { [key: string]: any }> = {
+  (props: PageProps): JSX.Element;
+  getWrapper(children: JSX.Element, pageProps: PageProps): JSX.Element;
 };
 
 const expires = new Date();
@@ -90,8 +101,11 @@ const App: React.FC<PropsWithChildren> = ({ children }) => {
           },
         }}
       >
+        <Notifications />
         <QueryClientProvider client={queryClientRef.current}>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <ModalsProvider>{children}</ModalsProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </MantineProvider>
     </ColorSchemeProvider>
@@ -103,11 +117,43 @@ const App: React.FC<PropsWithChildren> = ({ children }) => {
  * @param props
  * @returns
  */
-export const createWrapper = <TProps,>(props: TPageProps<TProps>): TPage => {
+export const _createWrapper = <TProps extends { [key: string]: any }>(props: TPageProps<TProps>): TPage<TProps> => {
   const C = props.pageComponent;
-  const Comp = (props: any) => <C {...props} />;
+  const Comp = (pageProps: TProps) => <C {...pageProps} />;
+  Comp.getWrapper = (children: JSX.Element, _pageProps: TProps) => (
+    <>
+      {/* {props.nextSeoProps && <NextSeo {...props.nextSeoProps(pageProps)} />} */}
+      <App>{props.layout ? props.layout({ children }) : children}</App>
+    </>
+  );
+  return Comp;
+};
 
-  Comp.getWrapper = (children: JSX.Element) => <App>{props.layout ? props.layout({ children }) : children}</App>;
+export const createAuthPage = <TProps extends { [key: string]: any }>({
+  pageComponent,
+  layout = createPageLayout,
+}: // layout,
+TPageProps<TProps>): TPage<TProps> => {
+  const Comp = _createWrapper({ pageComponent: pageComponent, layout });
+
+  const getWrapperFn = Comp.getWrapper;
+
+  Comp.getWrapper = (children, pageProps) =>
+    getWrapperFn(<AuthGuard redirectTo={routes.login}>{children}</AuthGuard>, pageProps);
+
+  return Comp;
+};
+
+export const createPage = <TProps extends { [key: string]: any }>({
+  pageComponent,
+  layout = createPageLayout,
+}: // layout,
+TPageProps<TProps>): TPage<TProps> => {
+  const Comp = _createWrapper({ pageComponent: pageComponent, layout });
+
+  const getWrapperFn = Comp.getWrapper;
+
+  Comp.getWrapper = (children, pageProps) => getWrapperFn(children, pageProps);
 
   return Comp;
 };

@@ -18,18 +18,18 @@
     "test": "turbo run test",
     "clean:danger": "git clean -xdf",
     "gen": "turbo run gen",
-    "start:engine": "docker-compose up",
+    "start:services": "docker-compose up",
     "hasura": "hasura --skip-update-check --project ./graphql-engine",
     "hasura:metadata:apply": "pnpm run hasura metadata apply",
-    "console": "pnpm run hasura console",
+    "hasura:console": "pnpm run hasura console",
     "metadata:apply": "pnpm run hasura metadata apply"
   },
   "keywords": [],
   "author": "ilijaNL",
   "license": "MIT",
   "devDependencies": {
-    "turbo": "^1.8.8",
     "hasura-cli": "~2.21.0",
-    "prettier": "^2.7.1"
+    "prettier": "^2.8.8",
+    "turbo": "^1.10.0"
   }
 }

@@ -4,18 +4,19 @@ import { GrantConfig, GrantProvider } from 'grant';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 /* @ts-ignore */
 import Grant from 'grant/lib/grant'; // need to use internal library since it is not exposed
-import { Type } from '@sinclair/typebox';
-import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { decrypt, encrypt } from '@/utils/encryption';
+import { Type, FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { assertRedirect, Provider, RequestToken, signRequestToken } from './common';
 import AUTH_ENV from './env';
-import ENVS from '@/env';
 import { randomUUID } from 'node:crypto';
 import { QueryBatch } from '@/utils/kysely';
-import { AuthQueryBuilder } from '.';
+import { QueryCreator } from 'kysely';
+import { DB } from './__generated__/auth-db';
+import { Pool } from 'pg';
 
-const SESSION_COOKIE_KEY = `__session_${AUTH_ENV.AUTH_NAME}`;
-const REDIRECT_COOKIE_KEY = `__redirect_${AUTH_ENV.AUTH_NAME}`;
+type AuthQueryBuilder = QueryCreator<DB>;
+
+const SESSION_COOKIE_KEY = `__session_auth`;
+const REDIRECT_COOKIE_KEY = `__redirect_auth`;
 
 type OauthProviders = Exclude<Provider, 'email'>;
 
@@ -131,6 +132,7 @@ export const authProviderConfig: Record<OauthProviders, ProviderConfig | null> =
 
 const CONFIG = {
   defaults: {
+    dynamic: false,
     origin: AUTH_URL.origin,
     transport: 'session',
     prefix: AUTH_URL.pathname + '/signin',
@@ -201,9 +203,15 @@ const setAccountInfoQuery = (
     )
     .compile();
 
-export const oauth: FastifyPluginAsyncTypebox<{}> = async (fastify) => {
+export const oauth: FastifyPluginAsyncTypebox<{
+  builder: AuthQueryBuilder;
+  pool: Pool;
+}> = async (fastify, { builder, pool }) => {
   // need cookie to store auth
-  await fastify.register(fastifyCookie);
+  await fastify.register(fastifyCookie, {
+    secret: AUTH_ENV.COOKIE_SECRET,
+    prefix: '__Host-',
+  });
 
   const grant = Grant({ config: CONFIG });
 
@@ -227,28 +235,24 @@ export const oauth: FastifyPluginAsyncTypebox<{}> = async (fastify) => {
       const { location, session } = await grant({
         method: req.method,
         params: req.params,
-        query: req.query,
+        // query: req.query,
         body: req.body,
       });
 
-      // encrypt
-      const encryptedSession = encrypt(JSON.stringify(session), AUTH_ENV.ENCRYPTION_KEY);
-
       const cookieConfig: CookieSerializeOptions = {
         // make this short
-        maxAge: 60 * 5, // seconds
-        secure: ENVS.NODE_ENV === 'production',
+        maxAge: 60 * 5, // in seconds
+        secure: 'auto',
         httpOnly: true,
         sameSite: 'lax',
+        signed: true,
         path: `${AUTH_URL.pathname}/signin/${req.params.provider}`,
       };
 
-      reply.setCookie(SESSION_COOKIE_KEY, encryptedSession, cookieConfig);
-
-      // store redirect cookie
-      reply.setCookie(REDIRECT_COOKIE_KEY, redirectPath, cookieConfig);
-
-      return reply.redirect(location);
+      return reply
+        .setCookie(SESSION_COOKIE_KEY, JSON.stringify(session), cookieConfig)
+        .setCookie(REDIRECT_COOKIE_KEY, redirectPath, cookieConfig)
+        .redirect(location);
     },
   });
 
@@ -267,20 +271,29 @@ export const oauth: FastifyPluginAsyncTypebox<{}> = async (fastify) => {
     },
     handler: async function handler(req, reply) {
       const _grantSession = req.cookies[SESSION_COOKIE_KEY];
-      const redirectPath = req.cookies[REDIRECT_COOKIE_KEY];
+      const _redirectPath = req.cookies[REDIRECT_COOKIE_KEY];
 
-      if (!_grantSession || !redirectPath) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      reply.clearCookie(SESSION_COOKIE_KEY).clearCookie(REDIRECT_COOKIE_KEY);
+
+      if (!_grantSession || !_redirectPath) {
         return reply.notFound();
       }
 
-      const decryptedSession = JSON.parse(decrypt(_grantSession, AUTH_ENV.ENCRYPTION_KEY));
+      const { value: decryptedSession, valid: vs } = req.unsignCookie(_grantSession);
+      const { value: redirectPath, valid: vp } = req.unsignCookie(_redirectPath);
+
+      if (!decryptedSession || !redirectPath || !vs || !vp) {
+        fastify.log.error({ decryptedSession, redirectPath, vs, vp });
+        return reply.notFound();
+      }
 
       const { session } = await grant({
         method: req.method,
         params: req.params,
         query: req.query,
         body: req.body,
-        session: decryptedSession,
+        session: JSON.parse(decryptedSession),
       });
 
       const provider = session.provider as OauthProviders;
@@ -302,7 +315,7 @@ export const oauth: FastifyPluginAsyncTypebox<{}> = async (fastify) => {
 
       async function getRequestToken(provider_account_id: string): Promise<RequestToken> {
         const new_account_id = randomUUID();
-        const dbBuilder = fastify.db_auth;
+        const dbBuilder = builder;
 
         // check if account_provider exists
         const accountProvider = await dbBuilder
@@ -391,7 +404,7 @@ export const oauth: FastifyPluginAsyncTypebox<{}> = async (fastify) => {
       }
 
       // commit
-      await batcher.flush(fastify.pgPool);
+      await batcher.flush(pool);
 
       const redirectUrl = new URL(redirectPath);
       redirectUrl.searchParams.set('request_token', signRequestToken(requestToken));

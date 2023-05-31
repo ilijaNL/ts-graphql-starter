@@ -13,6 +13,7 @@ const server = fastify({
   ...options,
 });
 
+// eslint-disable-next-line @typescript-eslint/no-floating-promises
 server.register(app);
 
 const closeListeners = closeWithGrace({ delay: 5000 }, async ({ err }: any) => {

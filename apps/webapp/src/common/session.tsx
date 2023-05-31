@@ -1,8 +1,7 @@
 import { useUserQuery } from './use-query';
-// import { MeDocument, MeQuery } from '@/__generated__/user/documents';
 import { createContext, useMemo, useContext, PropsWithChildren, useEffect } from 'react';
 import { keyCache, refresh, signOut as signOutRemote } from './auth';
-import { graphql } from '@/__generated__';
+import { graphql } from '@/__generated__/gql';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import Router from 'next/router';
 
@@ -15,6 +14,11 @@ const MeDocument = graphql(/* GraphQL */ `
       providers {
         id
         provider
+      }
+      info {
+        locale
+        id
+        display_name
       }
     }
   }
