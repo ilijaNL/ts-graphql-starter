@@ -1,20 +1,20 @@
 import { createProcedures } from '@/utils/rpc';
 import { FastifyInstance } from 'fastify';
-import { AccessToken, createIDToken, getIdToken, signAccessToken, signIDToken, verifyRequestToken } from './common';
+import { createIDToken, getIdToken, signAccessToken, signIDToken, verifyRequestToken } from './common';
 import { isError, toResult } from '@/utils/utils';
 import _merge from 'lodash/merge';
 import { auth, Static } from '@ts-hasura-starter/api';
 import { Pool } from 'pg';
 import { QueryCreator } from 'kysely';
 import { DB } from './__generated__/auth-db';
+import { AccessToken } from '@/jwt';
 
-// Same as defined in HASURA_GRAPHQL_JWT_SECRET environment for hasura
 const hasuraNamespace = 'hg';
 const defaultHasuraRole = 'user';
 
 type AccessTokenExtension = (
   baseToken: AccessToken,
-  claim: Static<typeof auth.contract['access-token']['input']>['claims'][number]
+  claim: Static<(typeof auth.contract)['access-token']['input']>['claims'][number]
 ) => AccessToken | Promise<AccessToken>;
 
 const hasuraUserRoleExtensions: AccessTokenExtension = (token, claim) => {

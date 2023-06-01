@@ -1,6 +1,13 @@
 import createHttpError from 'http-errors';
 import { InferInput, InferOutput, RPCContract, RPCDef, Static, TSchema } from '@ts-hasura-starter/rpc';
-import { FastifyInstance, FastifyPluginCallback, FastifyReply, FastifyRequest, RouteShorthandOptions } from 'fastify';
+import {
+  FastifyInstance,
+  FastifyPluginCallback,
+  FastifyReply,
+  FastifyRequest,
+  RegisterOptions,
+  RouteShorthandOptions,
+} from 'fastify';
 import { ajv } from './schema';
 
 const createValidateFn = <T extends TSchema>(schema: T) => {
@@ -126,7 +133,7 @@ export const toPlugin = <T extends RPCContract, TContext = unknown>(
 export function registerProcedures<T extends RPCContract, TContext = unknown>(
   instance: FastifyInstance,
   procedures: ProcedureHandlers<T, TContext>,
-  options: Options<TContext>
+  options: Options<TContext> & RegisterOptions
 ) {
   return instance.register(toPlugin(procedures), options);
 }

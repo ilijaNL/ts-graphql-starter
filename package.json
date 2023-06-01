@@ -4,6 +4,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "pnpm": {
+    "overrides": {
+      "@sinclair/typebox": "~0.28.14"
+    }
+  },
   "engines": {
     "node": ">=14",
     "pnpm": ">=7"

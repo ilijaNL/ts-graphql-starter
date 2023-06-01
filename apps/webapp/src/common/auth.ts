@@ -85,10 +85,14 @@ async function fetchAccessToken(context: AuthContext): Promise<string> {
 
   const authExecute = createRPCExecute(auth.contract, getClientConfig('AUTH_ENDPOINT'));
 
-  const { access_token } = await authExecute('access-token', {
-    claims: [claim],
-    rt: refreshToken,
-  });
+  const { access_token } = await authExecute(
+    'access-token',
+    {
+      claims: [claim],
+      rt: refreshToken,
+    },
+    {}
+  );
 
   if (!access_token) {
     throw new Error('unauthorized');
@@ -102,7 +106,7 @@ export const supported_providers = {
   github: 'github',
 } as const;
 
-type Providers = typeof supported_providers[keyof typeof supported_providers];
+type Providers = (typeof supported_providers)[keyof typeof supported_providers];
 
 export const redirectOAuth = (provider: Providers) => {
   return (window.location.href = `${getClientConfig('AUTH_ENDPOINT')}/signin/${provider}?redirectUrl=${

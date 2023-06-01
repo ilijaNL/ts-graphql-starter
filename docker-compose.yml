@@ -47,30 +47,30 @@ services:
       HASURA_GRAPHQL_DEV_MODE: true
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log
       HASURA_GRAPHQL_ENABLE_REMOTE_SCHEMA_PERMISSIONS: true
-  # minio:
-  #   image: minio/minio
-  #   ports:
-  #     - "9000:9000"
-  #     - "9001:9001"
-  #   environment:
-  #     - "MINIO_ACCESS_KEY=minio"
-  #     - "MINIO_SECRET_KEY=minio123"
-  #   command: server --console-address ":9001" /data
-  #   networks:
-  #     - ts-graphql-starter
-  # createbuckets:
-  #   image: minio/mc
-  #   networks:
-  #     - ts-graphql-starter
-  #   depends_on:
-  #     - minio
-  #   entrypoint: >
-  #     /bin/sh -c "
-  #     /usr/bin/mc alias set myminio http://minio:9000 minio minio123;
-  #     /usr/bin/mc mb --region=eu-west myminio/bucket;
-  #     /usr/bin/mc anonymous set download myminio/bucket;
-  #     exit 0;
-  #     "
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - "MINIO_ACCESS_KEY=minio"
+      - "MINIO_SECRET_KEY=minio123"
+    command: server --console-address ":9001" /data
+    networks:
+      - ts-graphql-starter
+  createbuckets: # container used to apply some initial policies
+    image: minio/mc
+    networks:
+      - ts-graphql-starter
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minio minio123;
+      /usr/bin/mc mb --region=eu-west myminio/bucket;
+      /usr/bin/mc anonymous set download myminio/bucket;
+      exit 0;
+      "
 networks:
   ts-graphql-starter:
     driver: bridge

@@ -24,7 +24,7 @@ async function handleAuthorizedPath(req: NextRequest) {
     return NextResponse.redirect(url, {});
   }
 
-  const refreshToken = await executeFn('redeem', { t: reqToken })
+  const refreshToken = await executeFn('redeem', { t: reqToken }, {})
     .then((d) => d.refreshToken)
     .catch((_) => '');
 

@@ -3,6 +3,7 @@ import { createVerifier, createSigner } from 'fast-jwt';
 import AUTH_ENVS from './env';
 import createHttpError from 'http-errors';
 import { domainIsAllowed } from '@/domains';
+import { AccessToken, ISS } from '@/jwt';
 
 export type Provider = 'email' | 'github' | 'twitter' | 'google' | 'linkedin' | 'microsoft';
 
@@ -48,8 +49,6 @@ const REFRESH_TOKEN_SECRET = AUTH_ENVS.REFRESH_TOKEN_SECRET;
 const JWT_ACCESS_TOKEN_EXPIRATION_TIME = parseInt(AUTH_ENVS.JWT_ACCESS_TOKEN_EXPIRATION_TIME);
 const JWT_TOKEN_SECRET = AUTH_ENVS.ACCESS_TOKEN_SECRET;
 
-const ISS = 'auth';
-
 const _verifyRequestToken = createVerifier({
   key: REFRESH_TOKEN_SECRET,
   cache: true,
@@ -73,11 +72,6 @@ const _signAccessToken = createSigner({
   expiresIn: JWT_ACCESS_TOKEN_EXPIRATION_TIME * 1000,
   iss: ISS,
 });
-
-export type AccessToken = {
-  acc_id: string;
-  sub: string;
-} & Record<string, unknown>;
 
 export function signAccessToken(token: AccessToken) {
   return _signAccessToken(token);

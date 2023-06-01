@@ -8,6 +8,9 @@ import { oauth } from './oauth';
 import { authProcedures } from './service';
 import { createFastifyPool } from '@/utils/plugins/pg-pool';
 import { registerProcedures } from '@/utils/rpc';
+import { accountProcedures } from './account';
+import createHttpError from 'http-errors';
+import { getUserAuthFromRequest } from '@/jwt';
 
 /**
  * Setup the service and expose as authService
@@ -39,6 +42,25 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
         fastify: req.server,
         builder: qb,
         pool: pgPool,
+      };
+    },
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  registerProcedures(fastify, accountProcedures, {
+    prefix: '/account',
+    contextFactory(req) {
+      const user = getUserAuthFromRequest(req);
+
+      if (!user) {
+        throw new createHttpError.Forbidden('not-authenticated');
+      }
+
+      return {
+        fastify: req.server,
+        builder: qb,
+        pool: pgPool,
+        account_id: user.acc_id,
       };
     },
   });

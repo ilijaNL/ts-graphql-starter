@@ -3,7 +3,7 @@ import { InferInput, InferOutput, RPCContract } from '@ts-hasura-starter/rpc';
 export type ExecuteFn<TContract extends RPCContract> = (<T extends keyof TContract>(
   method: T,
   payload: InferInput<TContract[T]>,
-  headers?: Record<string, any>
+  headers: Record<string, any>
 ) => Promise<InferOutput<TContract[T]>>) & { url: string };
 
 export function createRPCExecute<TContract extends RPCContract>(
@@ -13,7 +13,7 @@ export function createRPCExecute<TContract extends RPCContract>(
   async function execute<T extends keyof TContract>(
     method: T,
     payload: InferInput<TContract[T]>,
-    headers?: Record<string, any>
+    headers: Record<string, any>
   ): Promise<InferOutput<TContract[T]>> {
     let request: Promise<Response>;
     // validate request

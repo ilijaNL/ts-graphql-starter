@@ -137,10 +137,9 @@ interface FooterProps {
 }
 
 function LogoWithLinkAndText() {
-  const session = useSession();
   return (
     <Link
-      href={session.isAuthenticated ? routes.account : routes.home}
+      href={routes.home}
       style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -251,6 +250,10 @@ const PageHeader: React.FC<{ onBurgerClick: () => void; menuOpen: boolean }> = (
                   </UnstyledButton>
                 </Menu.Target>
                 <Menu.Dropdown>
+                  <Menu.Label>Home</Menu.Label>
+                  <Menu.Item component={Link} href={routes.home} icon={<IconSettings size={20} />}>
+                    Home
+                  </Menu.Item>
                   <Menu.Label>Settings</Menu.Label>
                   <Menu.Item component={Link} href={routes.account} icon={<IconSettings size={20} />}>
                     Account settings
@@ -409,7 +412,8 @@ const ResponsiveAppShell = (props: PropsWithChildren) => {
     Router.events.on('routeChangeComplete', close);
 
     return () => Router.events.off('routeChangeComplete', close);
-  }, [closeDrawer]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (isDesktop && drawerOpened) {

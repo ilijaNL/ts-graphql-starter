@@ -16,6 +16,7 @@ const MeDocument = graphql(/* GraphQL */ `
         provider
       }
       info {
+        avatar_url
         locale
         id
         display_name

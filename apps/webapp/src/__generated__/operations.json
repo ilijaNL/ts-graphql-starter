@@ -3,6 +3,6 @@
     "behaviour": {},
     "operationName": "GetMe",
     "operationType": "query",
-    "query": "query GetMe { me: auth_get_me { id info { display_name id locale } providers { id provider } token_version updated_at } }"
+    "query": "query GetMe { me: auth_get_me { id info { avatar_url display_name id locale } providers { id provider } token_version updated_at } }"
   }
 ]

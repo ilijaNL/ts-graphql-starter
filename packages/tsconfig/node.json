@@ -3,7 +3,7 @@
   "display": "NodeJS",
   "extends": "./base.json",
   "compilerOptions": {
-    "target": "es2019",
+    "target": "es2021",
     "module": "commonjs",
     "noEmitOnError": true,
     "resolveJsonModule": true,

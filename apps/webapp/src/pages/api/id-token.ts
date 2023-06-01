@@ -7,7 +7,7 @@ import {
   refreshCookiePath,
 } from '@/common/edge';
 import { createRPCExecute } from '@/common/rpc/execute';
-import getConfig from '@/config';
+import getEnv from '@/config';
 import { auth } from '@ts-hasura-starter/api';
 
 export const config = {
@@ -21,12 +21,12 @@ function getRefreshToken(req: Request) {
 }
 
 // nneed to define this since not embedded during build time
-const AUTH_URL = getConfig('AUTH_ENDPOINT');
+const AUTH_URL = getEnv('AUTH_ENDPOINT');
 
 async function getNewToken(currentToken: string): Promise<string> {
   const executeFn = createRPCExecute(auth.contract, AUTH_URL);
 
-  return executeFn('refresh', { rt: currentToken })
+  return executeFn('refresh', { rt: currentToken }, {})
     .then((d) => d.refreshToken ?? '')
     .catch(() => '');
 }
