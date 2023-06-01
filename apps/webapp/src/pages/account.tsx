@@ -1,4 +1,4 @@
-import { accountContract, accountExecuteFn } from '@/common/rpc/account';
+import { accountContract, accountExecuteFn, accountHooks } from '@/common/rpc/account';
 import { useUser } from '@/common/session';
 import { useTranslation } from '@/common/translations/use-translation';
 import { createFormResolver } from '@/common/typebox-resolver';
@@ -29,9 +29,10 @@ import { IconPhoto, IconUpload, IconX } from '@tabler/icons-react';
 import { useLocalImage } from '@/common/hooks';
 import { useMutation } from '@tanstack/react-query';
 import { InferInput } from '@ts-hasura-starter/rpc';
-import { getAuthHeaders } from '@/common/auth';
+import { getAuthHeaders, signOut } from '@/common/auth';
 import { getImagePath, isNextJSImage } from '@/config';
 import Image from 'next/image';
+import { modals } from '@mantine/modals';
 
 type ChangeProfileInfoForm = InferInput<typeof accountContract.update_account_info>;
 
@@ -57,10 +58,16 @@ const UserSettings = () => {
   const theme = useMantineTheme();
   const localImageInput = useLocalImage();
 
+  const { mutate: deleteAccount, isLoading: isDeleting } = accountHooks.useMutation(authContext, 'delete', {
+    onSuccess: () => {
+      signOut();
+    },
+  });
+
   const {
     mutate,
     error,
-    isLoading: isSubmitting,
+    isLoading: isChanging,
   } = useMutation(
     async (value: ChangeProfileInfoForm) => {
       const headers = await getAuthHeaders(authContext);
@@ -110,6 +117,8 @@ const UserSettings = () => {
       },
     }
   );
+
+  const isSubmitting = isChanging || isDeleting;
 
   return (
     <form autoComplete="off" noValidate onSubmit={handleSubmit((d) => mutate(d))}>
@@ -203,6 +212,25 @@ const UserSettings = () => {
           <Box style={{ flexGrow: 1 }} />
           <Button loading={isSubmitting} mt="sm" fullWidth variant="gradient" type="submit" disabled={!isDirty}>
             {t('Save')}
+          </Button>
+          <Button
+            loading={isSubmitting}
+            mt="sm"
+            color="red"
+            onClick={() => {
+              modals.openConfirmModal({
+                title: 'Please confirm your action',
+                centered: true,
+                confirmProps: { color: 'red' },
+                children: (
+                  <Text size="sm">Are you sure you want to delete this account? This is an irreversible action!</Text>
+                ),
+                labels: { confirm: t('Continue'), cancel: t('Cancel') },
+                onConfirm: () => deleteAccount({}),
+              });
+            }}
+          >
+            {t('Delete')} Account
           </Button>
         </Grid.Col>
       </Grid>

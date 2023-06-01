@@ -14,7 +14,9 @@ export const contract = createRPC({
   refresh: {
     type: 'mutation',
     input: Type.Object({
-      rt: Type.String({}),
+      rt: Type.String({
+        minLength: 10,
+      }),
     }),
     output: Type.Object({
       refreshToken: Type.String(),
@@ -30,7 +32,7 @@ export const contract = createRPC({
         Type.Union([
           Type.Object({
             type: Type.String(),
-            role: Type.String(),
+            role: Type.String({ maxLength: 64 }),
           }),
         ])
       ),

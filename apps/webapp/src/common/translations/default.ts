@@ -51,6 +51,7 @@ const defaultLanguage = {
   thank_you: 'Thank you',
   Actions: 'Actions',
   Language: 'Language',
+  Delete: 'Delete',
 };
 
 export default defaultLanguage;

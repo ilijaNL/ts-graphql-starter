@@ -12,7 +12,7 @@ export const contract = createRPC({
     input: Type.Partial(
       Type.Object({
         image: FileUploadData,
-        displayName: Type.String({ minLength: 3 }),
+        displayName: Type.String({ minLength: 3, maxLength: 48 }),
         locale: LocaleSchema,
       })
     ),
