@@ -64,7 +64,7 @@ const UserSettings = () => {
   } = useMutation(
     async (value: ChangeProfileInfoForm) => {
       const headers = await getAuthHeaders(authContext);
-      let image: string | undefined = undefined;
+      let image: { sig: string; path: string } | undefined = undefined;
       if (localImageInput.image) {
         const img = localImageInput.image;
         const signedData = await accountExecuteFn(
@@ -82,7 +82,10 @@ const UserSettings = () => {
           body: img,
         });
 
-        image = signedData.relative_path;
+        image = {
+          path: signedData.relative_path,
+          sig: signedData.path_sig,
+        };
       }
 
       return accountExecuteFn(

@@ -1,6 +1,7 @@
 import AWS from 'aws-sdk';
 import { parseEnvs } from './env';
 import { Type } from '@sinclair/typebox';
+import { createHmac } from 'node:crypto';
 
 export const S3_ENV = parseEnvs(
   Type.Object({
@@ -44,6 +45,15 @@ export async function deleteFile(filePath: string) {
     .promise();
 }
 
+function signPath(path: string) {
+  return createHmac('sha256', S3_ENV.STORAGE_SECRET_KEY).update(path).digest('hex');
+}
+
+export function isValidPath(path: string, sign: string) {
+  const expected = signPath(path);
+  return expected === sign;
+}
+
 export function generateSignedUrl(props: GenerateSignedUrlProps) {
   const s3Params = {
     Bucket: S3_ENV.STORAGE_SPACE,
@@ -53,10 +63,13 @@ export function generateSignedUrl(props: GenerateSignedUrlProps) {
     Expires: 60, // in seconds
   };
   const url = s3.getSignedUrl('putObject', s3Params);
+  const path = `${props.basePath}/${props.fileName}`;
+  const path_sig = signPath(path);
 
   return {
     fileLocation: s3Params.Bucket + '/' + s3Params.Key,
-    path: `${props.basePath}/${props.fileName}`,
+    path: path,
+    path_sig: path_sig,
     preSignedUrl: url,
     headers: {
       'x-amz-acl': s3Params.ACL,

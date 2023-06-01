@@ -1,6 +1,6 @@
 import { createRPC } from '@ts-hasura-starter/rpc';
 import { Type, Static } from '@sinclair/typebox';
-import { ImageContentType, ImageExtension, Success, UploadData } from './utils';
+import { FileUploadData, ImageContentType, ImageExtension, Success, UploadData } from './utils';
 
 const LocaleSchema = Type.Union([Type.Literal('en')]);
 
@@ -11,7 +11,7 @@ export const contract = createRPC({
     type: 'mutation',
     input: Type.Partial(
       Type.Object({
-        image: Type.String({ minLength: 10 }),
+        image: FileUploadData,
         displayName: Type.String({ minLength: 3 }),
         locale: LocaleSchema,
       })
