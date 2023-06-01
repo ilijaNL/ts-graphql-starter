@@ -10,7 +10,7 @@
     }
   },
   "engines": {
-    "node": ">=14",
+    "node": ">=16",
     "pnpm": ">=7"
   },
   "scripts": {
@@ -24,6 +24,7 @@
     "clean:danger": "git clean -xdf",
     "gen": "turbo run gen",
     "start:services": "docker-compose up",
+    "start:apps": "turbo run start",
     "hasura": "hasura --skip-update-check --project ./graphql-engine",
     "hasura:metadata:apply": "pnpm run hasura metadata apply",
     "hasura:console": "pnpm run hasura console",

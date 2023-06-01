@@ -22,8 +22,8 @@ export interface AccountInfo {
   id: Generated<string>;
   account_id: string;
   display_name: Generated<string>;
-  avatar_url: Generated<string>;
-  locale: string;
+  avatar_url: string | null;
+  locale: Generated<string>;
   extra_data: Json | null;
   updated_at: Generated<Timestamp>;
   created_at: Generated<Timestamp>;

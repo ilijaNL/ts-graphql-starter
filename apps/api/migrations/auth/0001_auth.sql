@@ -31,9 +31,9 @@ CREATE TRIGGER set_accounts_updated_at
 CREATE TABLE "{{schema}}"."account_info" (
   id uuid DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
   account_id uuid NOT NULL,
-  display_name text DEFAULT '' NOT NULl,
-  avatar_url text DEFAULT '' NOT NULL,
-  locale varchar(2) NOT NULL,
+  display_name text DEFAULT 'anonymous' NOT NULl,
+  avatar_url text,
+  locale varchar(2) DEFAULT 'en' NOT NULL,
   extra_data jsonb,
   "updated_at" timestamptz NOT NULL DEFAULT now(), 
   created_at timestamptz DEFAULT now() NOT NULL,

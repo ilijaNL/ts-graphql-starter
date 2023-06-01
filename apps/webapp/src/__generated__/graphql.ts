@@ -79,7 +79,7 @@ export type String_Comparison_Exp = {
 /** columns and relationships of "auth.account_info" */
 export type Auth_Account_Info = {
   account_id: Scalars['uuid'];
-  avatar_url: Scalars['String'];
+  avatar_url: Maybe<Scalars['String']>;
   created_at: Scalars['timestamptz'];
   display_name: Scalars['String'];
   extra_data: Maybe<Scalars['jsonb']>;
@@ -1337,7 +1337,7 @@ export type Uuid_Comparison_Exp = {
 export type GetMeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetMeQuery = { me: Array<{ id: string, token_version: number, updated_at: string, providers: Array<{ id: string, provider: string }>, info: { avatar_url: string, locale: string, id: string, display_name: string } | null }> };
+export type GetMeQuery = { me: Array<{ id: string, token_version: number, updated_at: string, providers: Array<{ id: string, provider: string }>, info: { avatar_url: string | null, locale: string, id: string, display_name: string } | null }> };
 
 
 export const GetMeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMe"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","alias":{"kind":"Name","value":"me"},"name":{"kind":"Name","value":"auth_get_me"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"token_version"}},{"kind":"Field","name":{"kind":"Name","value":"updated_at"}},{"kind":"Field","name":{"kind":"Name","value":"providers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}}]}},{"kind":"Field","name":{"kind":"Name","value":"info"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"avatar_url"}},{"kind":"Field","name":{"kind":"Name","value":"locale"}},{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"display_name"}}]}}]}}]}}]} as unknown as DocumentNode<GetMeQuery, GetMeQueryVariables>;

@@ -99,6 +99,7 @@ const UserSettings = () => {
     },
     {
       onSuccess() {
+        localImageInput.setImage(undefined);
         refresh();
         reset({}, { keepValues: true });
         showNotification({
@@ -124,7 +125,7 @@ const UserSettings = () => {
                 localImageInput.setImage(img);
                 setValue('image', undefined, { shouldDirty: true });
               }}
-              remoteImageURL={user.info?.avatar_url}
+              remoteImageURL={user.info?.avatar_url ?? undefined}
               onBlur={() => {
                 //
               }}
@@ -142,8 +143,8 @@ const UserSettings = () => {
                         <Image
                           src={imagePath}
                           alt="avatar"
-                          width={220}
-                          height={220}
+                          width={226}
+                          height={226}
                           style={{ margin: '0 auto', objectFit: 'cover' }}
                         />
                       );
@@ -152,7 +153,7 @@ const UserSettings = () => {
                     return <MImage src={imagePath} fit="cover" width={220} height={220} mx="auto" radius="md" />;
                   })
                   .otherwise(() => (
-                    <Stack align="center">
+                    <Stack h={220} justify="center" align="center">
                       <Dropzone.Accept>
                         <IconUpload
                           size={50}
