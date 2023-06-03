@@ -8,11 +8,13 @@ export const Success = Type.Object({
 });
 
 export const UploadData = Type.Object({
-  signed_url: Type.String({ minLength: 1 }),
+  signed_data: Type.Object({
+    url: Type.String({ minLength: 1 }),
+    fields: Type.Record(Type.String(), Type.Any()),
+  }),
   relative_path: Type.String({ minLength: 1 }),
   path_sig: Type.String({ minLength: 1 }),
   resource_id: Type.String({}),
-  headers: Type.Record(Type.String(), Type.Any()),
 });
 
 export const FileUploadData = Type.Object({

@@ -74,7 +74,7 @@ const UserSettings = () => {
       let image: { sig: string; path: string } | undefined = undefined;
       if (localImageInput.image) {
         const img = localImageInput.image;
-        const signedData = await accountExecuteFn(
+        const getSignedDataRes = await accountExecuteFn(
           'get_avatar_upload_link',
           {
             contentType: img.type as any,
@@ -83,15 +83,30 @@ const UserSettings = () => {
           headers
         );
 
-        await fetch(signedData.signed_url, {
-          method: 'PUT',
-          headers: { 'Content-Type': img.type, ...signedData.headers },
-          body: img,
+        const data: Record<string, any> = {
+          ...getSignedDataRes.signed_data.fields,
+          'Content-Type': img.type,
+          file: img,
+        };
+
+        const formData = new FormData();
+
+        for (const name in data) {
+          formData.append(name, data[name]);
+        }
+
+        const upload = await fetch(getSignedDataRes.signed_data.url, {
+          method: 'POST',
+          body: formData,
         });
 
+        if (!upload.ok) {
+          throw new Error('Upload failed.');
+        }
+
         image = {
-          path: signedData.relative_path,
-          sig: signedData.path_sig,
+          path: getSignedDataRes.relative_path,
+          sig: getSignedDataRes.path_sig,
         };
       }
 

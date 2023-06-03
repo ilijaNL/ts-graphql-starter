@@ -45,7 +45,7 @@ export const accountProcedures = createProcedures(account.contract)<Context>({
 
     // TODO: add event which deletes the old image
 
-    const data = generateSignedUrl({
+    const data = await generateSignedUrl({
       basePath: basePath,
       fileName: filename,
       contentType: input.contentType,
@@ -53,11 +53,10 @@ export const accountProcedures = createProcedures(account.contract)<Context>({
     });
 
     return {
-      headers: data.headers,
+      path_sig: data.path_sig,
       relative_path: data.path,
       resource_id: ctx.account_id,
-      signed_url: data.preSignedUrl,
-      path_sig: data.path_sig,
+      signed_data: data.signed_data,
     };
   },
   async delete(_, ctx) {
