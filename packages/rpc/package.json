@@ -13,10 +13,9 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@sinclair/typebox": "^0.28.0",
     "typescript": "4.7.4"
   },
-  "peerDependencies": {
+  "dependencies": {
     "@sinclair/typebox": "^0.28.0"
   }
 }

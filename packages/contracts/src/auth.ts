@@ -1,5 +1,4 @@
-import { createRPC } from '@ts-hasura-starter/rpc';
-import { Type } from '@sinclair/typebox';
+import { createRPC, Type } from '@ts-hasura-starter/rpc';
 
 export const contract = createRPC({
   redeem: {

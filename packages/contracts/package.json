@@ -12,11 +12,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "4.7.4",
-    "@sinclair/typebox": "^0.28.0"
-  },
-  "peerDependencies": {
-    "@sinclair/typebox": "^0.28.0"
+    "typescript": "4.7.4"
   },
   "dependencies": {
     "@ts-hasura-starter/rpc": "workspace:*"

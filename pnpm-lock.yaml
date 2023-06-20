@@ -310,18 +310,16 @@ importers:
         specifier: workspace:*
         version: link:../rpc
     devDependencies:
-      '@sinclair/typebox':
-        specifier: ~0.28.14
-        version: 0.28.14
       typescript:
         specifier: 4.7.4
         version: 4.7.4
 
   packages/rpc:
-    devDependencies:
+    dependencies:
       '@sinclair/typebox':
         specifier: ~0.28.14
         version: 0.28.14
+    devDependencies:
       typescript:
         specifier: 4.7.4
         version: 4.7.4
@@ -3871,6 +3869,7 @@ packages:
 
   /@sinclair/typebox@0.28.14:
     resolution: {integrity: sha512-aB3ddagwMFz2cSLg0/gUt7yaUHJUKnT+rEHGdb/srtEFILB0zdL7a2mcbA7kskOCFHicAOV1POeeZdwoevFgAQ==}
+    dev: false
 
   /@smithy/protocol-http@1.0.1:
     resolution: {integrity: sha512-9OrEn0WfOVtBNYJUjUAn9AOiJ4lzERCJJ/JeZs8E6yajTGxBaFRxUnNBHiNqoDJVg076hY36UmEnPx7xXrvUSg==}
