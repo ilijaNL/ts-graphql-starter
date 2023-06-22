@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@beam-australia/react-env": "^3.1.1",
-    "@graphql-edge/proxy": "^0.0.11",
+    "@graphql-edge/proxy": "^1.0.0",
     "@graphql-typed-document-node/core": "^3.2.0",
     "@mantine/core": "^6.0.13",
     "@mantine/dropzone": "^6.0.13",
@@ -31,12 +31,14 @@
     "date-fns": "^2.30.0",
     "dotenv-safe": "^8.2.0",
     "graphql": "^16.6.0",
+    "graphql-hive-edge-client": "^0.0.1",
     "next": "13.2.4",
     "next-seo": "^6.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.44.2",
     "safe-stable-stringify": "^2.4.3",
+    "sharp": "^0.32.1",
     "ts-pattern": "^4.3.0"
   },
   "devDependencies": {
@@ -51,7 +53,7 @@
     "eslint": "8.37.0",
     "eslint-config-next": "13.2.4",
     "eslint-config-prettier": "^8.8.0",
-    "graphql-operation-list": "^0.0.1",
+    "graphql-codegen-on-operations": "^0.0.1",
     "tsconfig": "workspace:*",
     "typescript": "^4.9.5"
   }

@@ -1,0 +1,21 @@
+{
+  "GetMe": {
+    "key": "2ff00a19b4bb2b29aa9520630881b6fe",
+    "operationName": "GetMe",
+    "operation": "query GetMe{auth_get_me{id info{avatar_url display_name id locale}providers{id provider}token_version updated_at}}",
+    "fields": [
+      "query_root.auth_get_me",
+      "auth_accounts.id",
+      "auth_accounts.token_version",
+      "auth_accounts.updated_at",
+      "auth_accounts.providers",
+      "auth_account_providers.id",
+      "auth_account_providers.provider",
+      "auth_accounts.info",
+      "auth_account_info.avatar_url",
+      "auth_account_info.locale",
+      "auth_account_info.id",
+      "auth_account_info.display_name"
+    ]
+  }
+}
