@@ -1,0 +1,14 @@
+# Workflow which release all artifacts when a new tag is added
+# Based on https://github.com/docker/build-push-action/blob/master/docs/advanced/tags-labels.md
+name: CICD
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+    secrets: 
+      HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
