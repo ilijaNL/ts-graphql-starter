@@ -74,5 +74,3 @@ jobs:
         run: |
           npm install -g @graphql-hive/cli &&
           hive schema:check schema.graphql --github
-      
-        
