@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  workflow_call:
+    secrets:
+      HIVE_TOKEN:
+        required: true
+    
+jobs:
+  sanity:
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg14-latest
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      hasura:
+        image: hasura/graphql-engine:v2.22.0
+        env:
+          ## postgres database to store Hasura metadata
+          HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:postgres@postgres:5432/app
+          HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256","key":"c9c4ad92-dc28-4928-99f8-689c391bd277","claims_namespace_path":"$.hg","allowed_skew": 30}'
+          ## this env var can be used to add the above postgres database to Hasura as a data source. this can be removed/updated based on your needs
+          PG_DATABASE_URL: postgres://postgres:postgres@postgres:5432/app
+          HASURA_GRAPHQL_ADMIN_SECRET: admin12345
+          HASURA_GRAPHQL_ENABLE_TELEMETRY: false
+          ## enable the console served by server
+          HASURA_GRAPHQL_ENABLE_CONSOLE: false # set to "false" to disable console
+          ## enable debugging mode. It is recommended to disable this in production
+          HASURA_GRAPHQL_DEV_MODE: true
+          HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log
+          HASURA_GRAPHQL_ENABLE_REMOTE_SCHEMA_PERMISSIONS: true
+        ports:
+          - 8082:8080
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8.x
+          run_install: false
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      # typecheck
+      - run: pnpm tc
+      # lint
+      - run: pnpm lint
+      # only build api since it manages the migrations
+      - run: pnpm turbo run build --filter=api...
+      - name: "Start API"
+        run: |
+          cd apps/api &&
+          cp .env.example .env &&
+          npm run start &
+          npx wait-port http://:3001/_health --timeout 5000
+      - name: "Apply hasura metadata"
+        run: |
+          npx wait-port http://:8082/v1/version &&
+          pnpm run hasura:metadata:apply
+      - name: "Download hasura schema"
+        run: |
+          npm install -g graphqurl &&
+          gq http://localhost:8082/v1/graphql -H "X-Hasura-Admin-Secret: admin12345" --introspect > schema.graphql
+      - name: "Check against hive schema"
+        env:
+          HIVE_TOKEN: ${{ secrets.HIVE_TOKEN }}
+        run: |
+          npm install -g @graphql-hive/cli &&
+          hive schema:check schema.graphql --github
