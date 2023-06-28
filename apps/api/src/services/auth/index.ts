@@ -22,8 +22,7 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
   const pgPool = createFastifyPool(fastify, { connectionString: ENVS.PG_CONNECTION, max: 5 });
 
   await migrate(pgPool, {
-    // we need to have migrations in the root directory because typescript wont copy the sql files when build
-    directory: path.join(process.cwd(), 'migrations', 'auth'),
+    directory: path.join(__dirname, 'migrations'),
     schema: dbSchema,
   });
 
@@ -35,8 +34,7 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
     pool: pgPool,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  registerProcedures(fastify, authProcedures, {
+  void registerProcedures(fastify, authProcedures, {
     contextFactory(req) {
       return {
         fastify: req.server,
@@ -46,8 +44,7 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
     },
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  registerProcedures(fastify, accountProcedures, {
+  void registerProcedures(fastify, accountProcedures, {
     prefix: '/account',
     contextFactory(req) {
       const user = getUserAuthFromRequest(req);

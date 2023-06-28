@@ -5,7 +5,7 @@ import { GrantConfig, GrantProvider } from 'grant';
 /* @ts-ignore */
 import Grant from 'grant/lib/grant'; // need to use internal library since it is not exposed
 import { Type, FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { assertRedirect, Provider, RequestToken, signRequestToken } from './common';
+import { assertRedirect, createRequesTokenQuery, Provider, RequestToken } from './common';
 import AUTH_ENV from './env';
 import { randomUUID } from 'node:crypto';
 import { QueryBatch } from '@/utils/kysely';
@@ -330,7 +330,6 @@ export const oauth: FastifyPluginAsyncTypebox<{
             provider: provider,
             p_account_id: accountProvider.provider_account_id,
             account_id: accountProvider.account_id,
-            sub: accountProvider.account_id,
           };
         }
 
@@ -358,7 +357,6 @@ export const oauth: FastifyPluginAsyncTypebox<{
               provider: provider,
               p_account_id: provider_account_id,
               account_id: emailProvider.account_id,
-              sub: emailProvider.account_id,
             };
           }
         }
@@ -393,7 +391,6 @@ export const oauth: FastifyPluginAsyncTypebox<{
           provider: provider,
           p_account_id: provider_account_id,
           account_id: new_account_id,
-          sub: new_account_id,
         };
       }
 
@@ -403,11 +400,16 @@ export const oauth: FastifyPluginAsyncTypebox<{
         return reply.badRequest();
       }
 
+      // create request token
+      const tokenID = randomUUID();
+      batcher.add(createRequesTokenQuery(builder, { account_id: requestToken.account_id, id: tokenID }));
+
       // commit
       await batcher.flush(pool);
 
       const redirectUrl = new URL(redirectPath);
-      redirectUrl.searchParams.set('request_token', signRequestToken(requestToken));
+
+      redirectUrl.searchParams.set('request_token', tokenID);
       redirectUrl.searchParams.set('redirectTo', redirectPath);
 
       return reply.redirect(302, redirectUrl.toString());

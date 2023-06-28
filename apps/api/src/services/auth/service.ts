@@ -1,6 +1,6 @@
 import { createProcedures } from '@/utils/rpc';
 import { FastifyInstance } from 'fastify';
-import { createIDToken, getIdToken, signAccessToken, signIDToken, verifyRequestToken } from './common';
+import { createIDToken, getIdToken, signAccessToken, signIDToken } from './common';
 import { isError, toResult } from '@/utils/utils';
 import _merge from 'lodash/merge';
 import { auth, Static } from '@ts-hasura-starter/api';
@@ -42,19 +42,24 @@ export type ProcedureContext = {
 
 export const authProcedures = createProcedures(auth.contract)<ProcedureContext>({
   async redeem({ t }, { fastify, builder }) {
-    const verifiedToken = verifyRequestToken(t);
+    // delete after requesting
+    const verifiedToken = await builder
+      .deleteFrom('requests')
+      .where('id', '=', t)
+      .returning(['account_id', 'id', 'created_at'])
+      .executeTakeFirst();
 
     if (!verifiedToken) {
       throw fastify.httpErrors.unauthorized('invalid-token');
     }
 
+    // todo add expiration date
+
     // get account
     const account = await builder
-      .selectFrom('account_providers as ap')
-      .innerJoin('accounts as aa', 'aa.id', 'ap.account_id')
-      .select(['aa.id', 'aa.token_version'])
-      .where('ap.provider', '=', verifiedToken.provider)
-      .where('ap.provider_account_id', '=', verifiedToken.p_account_id)
+      .selectFrom('accounts')
+      .select(['id', 'token_version'])
+      .where('id', '=', verifiedToken.account_id)
       .executeTakeFirst();
 
     if (!account) {
@@ -62,10 +67,6 @@ export const authProcedures = createProcedures(auth.contract)<ProcedureContext>(
     }
 
     const refreshToken = createIDToken({
-      provider: {
-        n: verifiedToken.provider,
-        p_id: verifiedToken.p_account_id,
-      },
       sub: account.id,
       account_id: account.id,
       token_version: account.token_version,
@@ -91,9 +92,9 @@ export const authProcedures = createProcedures(auth.contract)<ProcedureContext>(
       .select(['aa.id', 'aa.token_version'])
       .where('aa.id', '=', idToken.account_id)
       .where('aa.token_version', '=', idToken.token_version)
-      // optional to check if provider still exists
-      .where('ap.provider', '=', idToken.provider.n)
-      .where('ap.provider_account_id', '=', idToken.provider.p_id)
+      // // optional to check if provider still exists
+      // .where('ap.provider', '=', idToken.provider.n)
+      // .where('ap.provider_account_id', '=', idToken.provider.p_id)
       .executeTakeFirst();
 
     // check if refresh token is same as in token
@@ -102,7 +103,7 @@ export const authProcedures = createProcedures(auth.contract)<ProcedureContext>(
     }
 
     const refreshToken = createIDToken({
-      provider: idToken.provider,
+      // provider: idToken.provider,
       sub: account.id,
       account_id: account.id,
       token_version: account.token_version,

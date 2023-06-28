@@ -4,7 +4,7 @@ export const contract = createRPC({
   redeem: {
     type: 'mutation',
     input: Type.Object({
-      t: Type.String({}),
+      t: Type.String({ format: 'uuid' }),
     }),
     output: Type.Object({
       refreshToken: Type.String(),

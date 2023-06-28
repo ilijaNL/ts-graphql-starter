@@ -59,10 +59,17 @@ export interface Providers {
   comment: string | null;
 }
 
+export interface Requests {
+  id: Generated<string>;
+  account_id: string;
+  created_at: Generated<Timestamp>;
+}
+
 export interface DB {
   account_info: AccountInfo;
   account_providers: AccountProviders;
   accounts: Accounts;
   migrations: Migrations;
   providers: Providers;
+  requests: Requests;
 }

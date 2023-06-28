@@ -4,8 +4,12 @@ import AUTH_ENVS from './env';
 import createHttpError from 'http-errors';
 import { domainIsAllowed } from '@/domains';
 import { AccessToken, ISS } from '@/jwt';
+import { CompiledQuery, QueryCreator } from 'kysely';
+import { DB } from './__generated__/auth-db';
 
 export type Provider = 'email' | 'github' | 'twitter' | 'google' | 'linkedin' | 'microsoft';
+
+export type QueryBuilder = QueryCreator<DB>;
 
 /**
  * Function that should check if this is a known domain and we can safely redirect to it
@@ -23,7 +27,6 @@ export async function assertRedirect(url: string) {
 const JWT_REFRESH_TOKEN_EXPIRATION_TIME = parseInt(AUTH_ENVS.JWT_REFRESH_TOKEN_EXPIRATION_TIME ?? '-1');
 
 export type RequestToken = {
-  sub: string;
   account_id: string;
   provider: Provider;
   p_account_id: string;
@@ -39,21 +42,15 @@ export type Account = {
 
 export type IdToken = {
   sub: string;
-  provider: {
-    n: Provider;
-    p_id: string;
-  };
+  // provider: {
+  //   n: Provider;
+  //   p_id: string;
+  // };
 } & Account;
 
 const REFRESH_TOKEN_SECRET = AUTH_ENVS.REFRESH_TOKEN_SECRET;
 const JWT_ACCESS_TOKEN_EXPIRATION_TIME = parseInt(AUTH_ENVS.JWT_ACCESS_TOKEN_EXPIRATION_TIME);
 const JWT_TOKEN_SECRET = AUTH_ENVS.ACCESS_TOKEN_SECRET;
-
-const _verifyRequestToken = createVerifier({
-  key: REFRESH_TOKEN_SECRET,
-  cache: true,
-  allowedIss: [ISS],
-});
 
 const _verifyIDToken = createVerifier({
   key: REFRESH_TOKEN_SECRET,
@@ -77,29 +74,14 @@ export function signAccessToken(token: AccessToken) {
   return _signAccessToken(token);
 }
 
+/**
+ * Used as refresh token
+ */
 export function signIDToken(token: IdToken) {
   return _signIDToken(token);
 }
 
-const _signRequestToken = createSigner({
-  key: REFRESH_TOKEN_SECRET,
-  expiresIn: 1000 * 60 * 60, // 1 hour expiration
-  iss: ISS,
-});
-
-export function signRequestToken(token: RequestToken) {
-  return _signRequestToken(token);
-}
-
 export const createIDToken = (payload: IdToken): IdToken => payload;
-
-export function verifyRequestToken(token: string): RequestToken | null {
-  try {
-    return _verifyRequestToken(token);
-  } catch (e) {
-    return null;
-  }
-}
 
 export function getIdToken(id_token: string): IdToken | null {
   try {
@@ -107,4 +89,8 @@ export function getIdToken(id_token: string): IdToken | null {
   } catch (e) {
     return null;
   }
+}
+
+export function createRequesTokenQuery(builder: QueryBuilder, input: { account_id: string; id?: string }) {
+  return builder.insertInto('requests').values(input).compile();
 }
