@@ -16,10 +16,15 @@ export const config = {
 };
 
 const proxy = createGraphQLProxy(process.env.GRAPHQL_ENDPOINT!, createOperationParseFn(store));
+const hiveToken = process.env.GRAPHQL_HIVE_TOKEN;
 
 const usageCollector = createUsageCollector({
   maxSize: 25,
-  send: createHiveSendFn(process.env.GRAPHQL_HIVE_TOKEN!),
+  send: hiveToken
+    ? createHiveSendFn(hiveToken)
+    : async () => {
+        /* */
+      },
   sendInterval: 5_000,
   sampleRate: 1.0,
 });
