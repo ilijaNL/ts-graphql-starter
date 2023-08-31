@@ -1,4 +1,4 @@
-import type { ColumnType } from "kysely";
+import type { ColumnType } from 'kysely';
 
 export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
   ? ColumnType<S, I | undefined, U>
@@ -17,6 +17,13 @@ export type JsonPrimitive = boolean | null | number | string;
 export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
+
+export interface _Migrations {
+  id: number;
+  name: string;
+  hash: string;
+  created_at: Generated<Timestamp>;
+}
 
 export interface AccountInfo {
   id: Generated<string>;
@@ -47,10 +54,17 @@ export interface Accounts {
   created_at: Generated<Timestamp>;
 }
 
-export interface Migrations {
-  id: number;
-  name: string;
-  hash: string;
+export interface CodeChallenge {
+  id: Generated<string>;
+  code_challenge: string;
+  account_id: string;
+  created_at: Generated<Timestamp>;
+}
+
+export interface Otp {
+  id: Generated<string>;
+  type: string;
+  value: string;
   created_at: Generated<Timestamp>;
 }
 
@@ -59,17 +73,12 @@ export interface Providers {
   comment: string | null;
 }
 
-export interface Requests {
-  id: Generated<string>;
-  account_id: string;
-  created_at: Generated<Timestamp>;
-}
-
 export interface DB {
+  _migrations: _Migrations;
   account_info: AccountInfo;
   account_providers: AccountProviders;
   accounts: Accounts;
-  migrations: Migrations;
+  code_challenge: CodeChallenge;
+  otp: Otp;
   providers: Providers;
-  requests: Requests;
 }

@@ -6,11 +6,13 @@ import { FastifyInstance } from 'fastify';
 import { account } from '@ts-hasura-starter/api';
 import { randomUUID } from 'node:crypto';
 import { generateSignedUrl, isValidPath } from '@/utils/s3';
+import { AuthService } from './lib';
 
 type Context = {
   fastify: FastifyInstance;
   pool: Pool;
   builder: QueryCreator<DB>;
+  authService: AuthService;
   // requires to be authenticated
   account_id: string;
 };
@@ -21,19 +23,17 @@ export const accountProcedures = createProcedures(account.contract)<Context>({
   async update_account_info(input, ctx) {
     const image = input.image;
 
-    if (image && !isValidPath(image.path, image.sig)) {
+    if (image && !isValidPath(image)) {
       throw ctx.fastify.httpErrors.badRequest('not valid image signature');
+
+      // TODO: add task which deletes the old image
     }
 
-    await ctx.builder
-      .updateTable('account_info')
-      .where('account_id', '=', ctx.account_id)
-      .set({
-        avatar_url: image?.path,
-        locale: input.locale,
-        display_name: input.displayName,
-      })
-      .execute();
+    await ctx.authService.account.setAccountInfo(ctx.account_id, {
+      locale: input.locale,
+      avatar_url: image?.path,
+      displayName: input.displayName,
+    });
 
     return {
       ok: true,
@@ -42,8 +42,6 @@ export const accountProcedures = createProcedures(account.contract)<Context>({
   async get_avatar_upload_link(input, ctx) {
     const basePath = getAvatarImagePath(ctx.account_id);
     const filename = `${randomUUID()}.${input.extension}`;
-
-    // TODO: add event which deletes the old image
 
     const data = await generateSignedUrl({
       basePath: basePath,
@@ -60,7 +58,7 @@ export const accountProcedures = createProcedures(account.contract)<Context>({
     };
   },
   async delete(_, ctx) {
-    await ctx.builder.deleteFrom('accounts').where('id', '=', ctx.account_id).execute();
+    await ctx.authService.account.deleteAccount(ctx.account_id);
     return {
       ok: true,
     };

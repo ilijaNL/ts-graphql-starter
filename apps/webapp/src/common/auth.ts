@@ -1,8 +1,8 @@
 import TinyCache from './tiny-cache';
 // @ts-ignore
-import stringify from 'safe-stable-stringify';
+import stableStringify from 'safe-stable-stringify';
 import { match } from 'ts-pattern';
-import { ExecuteFn, createRPCExecute } from './rpc/execute';
+import { ExecuteFn } from './rpc/execute';
 import { MutationKeys, QueryKeys } from './rpc/hooks';
 import {
   useMutation as _useMutation,
@@ -11,8 +11,8 @@ import {
   UseQueryOptions,
 } from '@tanstack/react-query';
 import getClientConfig from '@/config';
-import { auth } from '@ts-hasura-starter/api';
 import { InferInput, InferOutput, RPCContract } from '@ts-hasura-starter/rpc';
+import { generatePKCEChallenge, generatePKCEVerifier } from './hash';
 
 export const keyCache = new TinyCache<string, Promise<string>>();
 
@@ -28,7 +28,7 @@ export type AuthContext = UserContext;
  * @returns
  */
 function getKey(context: AuthContext): string {
-  return stringify(context);
+  return stableStringify(context);
 }
 
 function setAccessToken(key: string, tokenPromise: Promise<string>) {
@@ -70,29 +70,22 @@ export const requestSignInEmail = async (email: string) => {
 };
 
 async function fetchAccessToken(context: AuthContext): Promise<string> {
-  const claim = match(context)
+  const roleClaim = match(context)
     .with({ role: 'user' }, (r) => ({ type: 'hasura', role: r.role }))
     .exhaustive();
 
-  const refreshToken = await fetch('/api/id-token', {
-    method: 'GET',
-    credentials: 'same-origin',
-  }).then((d) => d.text());
+  const resp = await fetch('/api/id-token?intent=access', {
+    method: 'POST',
+    body: JSON.stringify({
+      claims: [roleClaim],
+    }),
+  });
 
-  if (!refreshToken) {
-    throw new Error('un-authorized');
+  if (!resp.ok) {
+    throw new Error('unauthorized');
   }
 
-  const authExecute = createRPCExecute(auth.contract, getClientConfig('AUTH_ENDPOINT'));
-
-  const { access_token } = await authExecute(
-    'access-token',
-    {
-      claims: [claim],
-      rt: refreshToken,
-    },
-    {}
-  );
+  const access_token = await resp.text();
 
   if (!access_token) {
     throw new Error('unauthorized');
@@ -108,14 +101,23 @@ export const supported_providers = {
 
 type Providers = (typeof supported_providers)[keyof typeof supported_providers];
 
-export const redirectOAuth = (provider: Providers) => {
-  return (window.location.href = `${getClientConfig('AUTH_ENDPOINT')}/signin/${provider}?redirectUrl=${
-    window.location.origin
-  }/__authorized`);
+export const redirectOAuth = async (provider: Providers) => {
+  const redirectUrl = new URL(`${getClientConfig('AUTH_ENDPOINT')}/signin/${provider}`);
+
+  const authorizePath = '/__authorized';
+
+  const verifier = generatePKCEVerifier();
+  const maxAge = 2 * 60 * 60; // 2 hours;
+  document.cookie = `pkce=${verifier}; path=${authorizePath}; max-age=${maxAge}; SameSite=Lax; secure`;
+
+  redirectUrl.searchParams.set('redirectUrl', `${window.location.origin}${authorizePath}`);
+  redirectUrl.searchParams.set('code_challenge', await generatePKCEChallenge(verifier));
+
+  return (window.location.href = redirectUrl.href);
 };
 
 export const refresh = async () => {
-  return fetch(`/api/id-token`, {
+  return fetch(`/api/id-token?intent=refresh`, {
     method: 'POST',
     credentials: 'same-origin',
   });

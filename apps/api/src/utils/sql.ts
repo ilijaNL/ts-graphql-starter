@@ -19,40 +19,44 @@ export type PGClient = {
 export type QueryCommand<Result> = {
   text: string;
   values: unknown[];
-  frags: ReadonlyArray<string>;
   // used to keep the type definition and is always undefined
   __result?: Result;
 };
 
+export function unsafeSQL<Result extends QueryResultRow>(
+  sqlFragments: ReadonlyArray<string>,
+  ...parameters: unknown[]
+): QueryCommand<Result> {
+  const reduced: string = sqlFragments.reduce((prev, curr, i) => prev + parameters[i - 1] + curr);
+
+  return {
+    text: reduced,
+    values: [],
+  };
+}
+
 export function createSql(replacers: Array<{ re: RegExp; value: string }>) {
+  const cache = new WeakMap<ReadonlyArray<string>, string>();
   return function sql<Result extends QueryResultRow>(
     sqlFragments: ReadonlyArray<string>,
     ...parameters: unknown[]
   ): QueryCommand<Result> {
-    const text: string = sqlFragments.reduce((prev, curr, i) => prev + '$' + i + curr);
+    let text: string;
+    if (cache.has(sqlFragments)) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      text = cache.get(sqlFragments)!;
+    } else {
+      const reduced: string = sqlFragments.reduce((prev, curr, i) => prev + '$' + i + curr);
+      text = replacers.reduce((agg, curr) => agg.replace(curr.re, curr.value), reduced);
+      cache.set(sqlFragments, text);
+    }
+
     const result = {
-      frags: sqlFragments,
-      text: replacers.reduce((agg, curr) => agg.replace(curr.re, curr.value), text),
+      text: text,
       values: parameters,
     };
 
     return result;
-  };
-}
-
-export function combineSQL(f: ReadonlyArray<string>, ...parameters: QueryCommand<any>[]) {
-  const sqlFragments = [f[0] ?? ''];
-
-  for (let i = 0; i < f.length - 1; ++i) {
-    sqlFragments[sqlFragments.length - 1] += parameters[i]?.frags[0] ?? '';
-    sqlFragments.push(...(parameters[i]?.frags ?? []).slice(1));
-    sqlFragments[sqlFragments.length - 1] += f[i + 1] ?? '';
-  }
-
-  const values = [...parameters.flatMap((c) => c.values)];
-  return {
-    sqlFragments: sqlFragments,
-    parameters: values,
   };
 }
 

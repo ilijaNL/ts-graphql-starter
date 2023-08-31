@@ -48,9 +48,9 @@ function signPath(path: string) {
   return createHmac('sha256', S3_ENV.STORAGE_SECRET_KEY).update(path).digest('hex');
 }
 
-export function isValidPath(path: string, sign: string) {
-  const expected = signPath(path);
-  return expected === sign;
+export function isValidPath(props: { path: string; sig: string }) {
+  const expected = signPath(props.path);
+  return expected === props.sig;
 }
 
 export async function generateSignedUrl(props: GenerateSignedUrlProps) {

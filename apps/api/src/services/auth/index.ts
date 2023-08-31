@@ -1,9 +1,6 @@
-import path from 'path';
 import ENVS from '@/env';
-import { migrate } from '@/utils/migration';
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import type { DB } from './__generated__/auth-db';
-import { createQueryBuilder } from '@/utils/plugins/kysely';
 import { oauth } from './oauth';
 import { authProcedures } from './service';
 import { createFastifyPool } from '@/utils/plugins/pg-pool';
@@ -11,6 +8,12 @@ import { registerProcedures } from '@/utils/rpc';
 import { accountProcedures } from './account';
 import createHttpError from 'http-errors';
 import { getUserAuthFromRequest } from '@/jwt';
+import { createAuth } from './lib';
+import AUTH_ENV from './env';
+import { domainIsAllowed } from '@/domains';
+import { createQueryBuilder } from '@/utils/kysely';
+import { createMigrations } from './lib/migrations';
+import { migrate } from '@/utils/migration';
 
 /**
  * Setup the service and expose as authService
@@ -19,27 +22,78 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
   // SETUP
   const dbSchema = opts.schema ?? 'auth';
 
-  const pgPool = createFastifyPool(fastify, { connectionString: ENVS.PG_CONNECTION, max: 5 });
-
-  await migrate(pgPool, {
-    directory: path.join(__dirname, 'migrations'),
-    schema: dbSchema,
+  // create own pool
+  const pgPool = createFastifyPool(fastify, {
+    //
+    connectionString: ENVS.PG_CONNECTION,
+    max: 5,
   });
+
+  // apply migrations for auth service
+  await migrate({
+    schema: dbSchema,
+    pool: pgPool,
+    migrations: createMigrations({ schema: dbSchema }),
+    migrationTable: '_migrations',
+  });
+
+  const authService = createAuth({
+    pgSchema: dbSchema,
+    db: pgPool,
+    jwt: {
+      iss: 'auth',
+      secret: AUTH_ENV.ACCESS_TOKEN_SECRET,
+      shortTokenInSec: parseInt(AUTH_ENV.JWT_ACCESS_TOKEN_EXPIRATION_TIME),
+      refreshTokenInSec: parseInt(AUTH_ENV.JWT_REFRESH_TOKEN_EXPIRATION_TIME),
+    },
+    oauth: {
+      authURL: AUTH_ENV.AUTH_URL,
+      async validateUrl(redirectUrl) {
+        return domainIsAllowed(redirectUrl);
+      },
+      oauthProviders: {
+        google:
+          AUTH_ENV.GOOGLE_OAUTH_CLIENT_ID && AUTH_ENV.GOOGLE_OAUTH_SECRET
+            ? {
+                key: AUTH_ENV.GOOGLE_OAUTH_CLIENT_ID,
+                secret: AUTH_ENV.GOOGLE_OAUTH_SECRET,
+                scope: ['profile', 'openid', 'email'],
+              }
+            : undefined,
+        linkedin:
+          AUTH_ENV.LINKEDIN_OAUTH_CLIENT_ID && AUTH_ENV.LINKEDIN_OAUTH_SECRET
+            ? {
+                key: AUTH_ENV.LINKEDIN_OAUTH_CLIENT_ID,
+                secret: AUTH_ENV.LINKEDIN_OAUTH_SECRET,
+                pkce: false,
+                scope: ['r_emailaddress', 'r_liteprofile'],
+              }
+            : undefined,
+        microsoft:
+          AUTH_ENV.MICROSOFT_OAUTH_CLIENT_ID && AUTH_ENV.MICROSOFT_OAUTH_SECRET
+            ? {
+                key: AUTH_ENV.MICROSOFT_OAUTH_CLIENT_ID,
+                secret: AUTH_ENV.MICROSOFT_OAUTH_SECRET,
+                scope: ['openid', 'email'],
+              }
+            : undefined,
+      },
+    },
+  });
+
+  fastify.addHook('onClose', () => authService.stop());
 
   const qb = createQueryBuilder<DB>(pgPool, dbSchema);
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  fastify.register(oauth, {
-    builder: qb,
-    pool: pgPool,
+  void fastify.register(oauth, {
+    authService: authService,
   });
 
   void registerProcedures(fastify, authProcedures, {
     contextFactory(req) {
       return {
         fastify: req.server,
-        builder: qb,
-        pool: pgPool,
+        authService: authService,
       };
     },
   });
@@ -56,6 +110,7 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
       return {
         fastify: req.server,
         builder: qb,
+        authService,
         pool: pgPool,
         account_id: user.acc_id,
       };

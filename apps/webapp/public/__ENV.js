@@ -1,1 +1,0 @@
-window.__ENV = {"NEXT_APP_API":"http://localhost:3001","NEXT_APP_AUTH_ENDPOINT":"http://localhost:3001/auth","NEXT_APP_BASE_DOMAIN":"http://app.localhost:3000","NEXT_APP_CDN":"http://localhost:9000/bucket","REACT_ENV_PREFIX":"NEXT_APP"};

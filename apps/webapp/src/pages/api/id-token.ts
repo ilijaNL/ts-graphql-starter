@@ -7,25 +7,23 @@ import {
   refreshCookiePath,
 } from '@/common/edge';
 import { createRPCExecute } from '@/common/rpc/execute';
-import getEnv from '@/config';
 import { auth } from '@ts-hasura-starter/api';
 
 export const config = {
   runtime: 'edge',
 };
 
-function getRefreshToken(req: Request) {
+function getRefreshToken(req: Request): string | null {
   const cookies = getCookies(req.headers);
-  const refreshToken = cookies.get(refreshCookieKey) ?? '';
+  const refreshToken = cookies.get(refreshCookieKey) ?? null;
   return refreshToken;
 }
 
 // nneed to define this since not embedded during build time
-const AUTH_URL = getEnv('AUTH_ENDPOINT');
+const AUTH_URL = process.env.NEXT_APP_AUTH_ENDPOINT!;
+const executeFn = createRPCExecute(auth.contract, AUTH_URL);
 
 async function getNewToken(currentToken: string): Promise<string> {
-  const executeFn = createRPCExecute(auth.contract, AUTH_URL);
-
   return executeFn('refresh', { rt: currentToken }, {})
     .then((d) => d.refreshToken ?? '')
     .catch(() => '');
@@ -33,13 +31,10 @@ async function getNewToken(currentToken: string): Promise<string> {
 
 export default async function handler(req: Request) {
   const method = req.method.toLowerCase();
-  // get is to retrieve the cookie
-  if (method === 'get') {
-    return new Response(getRefreshToken(req));
-  }
+  const url = new URL(req.url);
 
   // refresh
-  if (method === 'post') {
+  if (method === 'post' && url.searchParams.get('intent') === 'refresh') {
     const token = getRefreshToken(req);
     if (!token) {
       return new Response('ok');
@@ -58,6 +53,30 @@ export default async function handler(req: Request) {
     return new Response('ok', {
       headers: responseHeaders,
     });
+  }
+
+  if (method === 'post' && url.searchParams.get('intent') === 'access') {
+    const token = getRefreshToken(req);
+    if (!token) {
+      return new Response('forbidden', {
+        status: 403,
+      });
+    }
+
+    // get access token
+    const body = await req.json();
+    const claims = body.claims;
+
+    const { access_token } = await executeFn(
+      'access-token',
+      {
+        claims: claims,
+        rt: token,
+      },
+      {}
+    );
+
+    return new Response(access_token);
   }
 
   if (method === 'delete') {

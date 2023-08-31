@@ -1,92 +1,42 @@
-import { readFile, readdir } from 'fs/promises';
-import * as path from 'path';
 import crypto from 'crypto';
+import { query, withTransaction, unsafeSQL } from './sql';
 import { Pool } from 'pg';
-import { createSql, PGClient, query, withTransaction } from './sql';
 
-const isValidFile = (fileName: string) => /\.(sql)$/gi.test(fileName);
+const baseMigration = (props: { schema: string; migrationTable: string }) =>
+  `
+  CREATE SCHEMA IF NOT EXISTS ${props.schema};
 
-const getFileName = (filePath: string) => path.basename(filePath);
+  CREATE TABLE IF NOT EXISTS ${props.schema}."${props.migrationTable}" (
+    id integer PRIMARY KEY,
+    name varchar(100) UNIQUE NOT NULL,
+    -- sha1 hex encoded hash of the file name and contents, to ensure it hasn't been altered since applying the migration
+    hash varchar(40) NOT NULL,
+    "created_at" timestamptz NOT NULL DEFAULT now()
+  );
+`;
 
 const hashString = (s: string) => crypto.createHash('sha1').update(s, 'utf8').digest('hex');
-
-const parseId = (id: string) => {
-  const parsed = parseInt(id, 10);
-  if (isNaN(parsed)) {
-    throw new Error(`Migration file name should begin with an integer ID.'`);
-  }
-
-  return parsed;
-};
-
-export interface FileInfo {
-  id: number;
-  name: string;
-}
-
-const parseFileName = (fileName: string): FileInfo => {
-  const result = /^(-?\d+)[-_]?(.*).(sql)$/gi.exec(fileName);
-
-  if (!result) {
-    throw new Error(`Invalid file name: '${fileName}'.`);
-  }
-
-  const [, id, name] = result;
-
-  return {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    id: parseId(id!),
-    name: name == null || name === '' ? fileName : name,
-  };
-};
 
 type Migration = {
   id: number;
   name: string;
-  contents: string;
-  fileName: string;
   hash: string;
   sql: string;
 };
 
-const loadMigrationFile = async (filePath: string, schema: string) => {
-  const fileName = getFileName(filePath);
-
-  try {
-    const { id, name } = parseFileName(fileName);
-    const contents = await readFile(filePath, { encoding: 'utf8' });
-
-    const sql = contents.replace(new RegExp('{{schema}}', 'g'), schema);
-    const hash = hashString(fileName + sql);
-
-    return {
-      id,
-      name,
-      contents,
-      fileName,
-      hash,
-      sql,
-    };
-  } catch (err: any) {
-    throw new Error(`${err.message} - Offending file: '${fileName}'.`);
-  }
-};
-
-const loadMigrationFiles = async (directory: string, schema: string) => {
-  const fileNames = await readdir(directory);
-
-  if (fileNames == null) {
-    return [];
-  }
-
-  const migrationFiles = fileNames.map((fileName) => path.resolve(directory, fileName)).filter(isValidFile);
-
-  const unorderedMigrations = await Promise.all(migrationFiles.map((path) => loadMigrationFile(path, schema)));
-
-  // Arrange in ID order
-  const orderedMigrations = unorderedMigrations.sort((a, b) => a.id - b.id);
-
-  return orderedMigrations;
+const loadMigrations = (
+  props: {
+    schema: string;
+    migrationTable: string;
+  },
+  items: string[]
+): Array<Migration> => {
+  return [baseMigration(props), ...items].map((sql, idx) => ({
+    hash: hashString(sql),
+    id: idx,
+    name: `${idx}_m`,
+    sql: sql,
+  }));
 };
 
 function filterMigrations(migrations: Array<Migration>, appliedMigrations: Set<number>) {
@@ -112,43 +62,33 @@ function validateMigrationHashes(
   const invalidHashes = migrations.filter(invalidHash);
   if (invalidHashes.length > 0) {
     // Someone has altered one or more migrations which has already run - gasp!
-    const invalidFiles = invalidHashes.map(({ fileName }) => fileName);
-    throw new Error(`Hashes don't match for migrations '${invalidFiles}'.
-This means that the scripts have changed since it was applied.`);
+    const invalidIdx = invalidHashes.map(({ id }) => id.toString());
+    throw new Error(`Hashes don't match for migrations id's '${invalidIdx.join(',')}'.
+This means that the migrations items have changed since it was applied. You only allow to append new migrations`);
   }
 }
 
-export type QueryCommand<Result> = {
-  text: string;
-  values: unknown[];
-  frags: ReadonlyArray<string>;
-  // used to keep the type definition and is always undefined
-  __result?: Result;
-};
-
-export const createMigrationPlans = (schema: string) => {
-  const sql = createSql([{ re: new RegExp('{{schema}}', 'g'), value: schema }]);
-
+export const createMigrationPlans = (props: { schema: string; migrationTable: string }) => {
   function getMigrations() {
-    return sql<{ id: number; name: string; hash: string }>`
-      SELECT * FROM {{schema}}.migrations ORDER BY id
+    return unsafeSQL<{ id: number; name: string; hash: string }>`
+      SELECT * FROM ${props.schema}.${props.migrationTable} ORDER BY id
     `;
   }
 
   function insertMigration(migration: { id: number; hash: string; name: string }) {
-    return sql`
+    return unsafeSQL`
       INSERT INTO 
-        {{schema}}.migrations (id, name, hash) 
-      VALUES (${migration.id}, ${migration.name}, ${migration.hash})
+        ${props.schema}.${props.migrationTable} (id, name, hash) 
+      VALUES (${migration.id}, '${migration.name}', '${migration.hash}')
     `;
   }
 
   function tableExists(table: string) {
-    return sql<{ exists: boolean }>`
+    return unsafeSQL<{ exists: boolean }>`
       SELECT EXISTS (
         SELECT FROM information_schema.tables 
-        WHERE  table_schema = '{{schema}}'
-        AND    table_name   = ${table}
+        WHERE  table_schema = '${props.schema}'
+        AND    table_name   = '${table}'
       );  
     `;
   }
@@ -160,53 +100,32 @@ export const createMigrationPlans = (schema: string) => {
   };
 };
 
-export async function migrate(pool: Pool, props: { schema: string; directory: string }) {
-  const allMigrations = await loadMigrationFiles(props.directory, props.schema);
+export async function migrate(props: { pool: Pool; schema: string; migrations: string[]; migrationTable: string }) {
+  const _props = { migrationTable: props.migrationTable, schema: props.schema };
+  const allMigrations = loadMigrations(_props, props.migrations);
+  let toApply = [...allMigrations];
   // check if table exists
-  const plans = createMigrationPlans(props.schema);
-  let done = false;
+  const plans = createMigrationPlans(_props);
 
-  async function migrationTableExists(client: PGClient) {
-    const rows = await query(client, plans.tableExists('migrations'));
-    return !!rows[0]?.exists;
-  }
+  await withTransaction(props.pool, async (client) => {
+    // acquire lock
+    await client.query(`
+      SELECT pg_advisory_xact_lock( ('x' || md5(current_database() || '.tb.${props.schema}'))::bit(64)::bigint )
+    `);
 
-  let migTableExists = await migrationTableExists(pool);
+    const rows = await query(client, plans.tableExists(props.migrationTable));
+    const migTableExists = rows[0]?.exists;
 
-  while (done === false) {
-    done = await withTransaction(pool, async (client) => {
-      // acquire lock
-      await client.query(`
-        SELECT pg_advisory_xact_lock( ('x' || md5(current_database() || '.migrate.${props.schema}'))::bit(64)::bigint )
-      `);
+    // fetch latest migration
+    if (migTableExists) {
+      const appliedMigrations = await query(client, plans.getMigrations());
+      validateMigrationHashes(allMigrations, appliedMigrations);
+      toApply = filterMigrations(allMigrations, new Set(appliedMigrations.map((m) => m.id)));
+    }
 
-      let toApply = [...allMigrations];
-
-      // need to recheck if exists, otherwise might be created from other process in meantime
-      if (!migTableExists) {
-        migTableExists = await migrationTableExists(client);
-      }
-
-      // fetch latest migration
-      if (migTableExists) {
-        const appliedMigrations = await query(client, plans.getMigrations());
-        validateMigrationHashes(allMigrations, appliedMigrations);
-        toApply = filterMigrations(allMigrations, new Set(appliedMigrations.map((m) => m.id)));
-      }
-
-      // get first migration
-      const migration = toApply.shift();
-
-      // nothing to do
-      if (!migration) {
-        return true;
-      }
-
+    for (const migration of toApply) {
       await client.query(migration.sql);
       await query(client, plans.insertMigration(migration));
-
-      // if items left, continue the for while loop
-      return toApply.length === 0;
-    });
-  }
+    }
+  });
 }
