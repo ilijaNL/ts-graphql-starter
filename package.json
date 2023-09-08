@@ -6,7 +6,7 @@
   "main": "index.js",
   "pnpm": {
     "overrides": {
-      "@sinclair/typebox": "~0.28.14"
+      "@sinclair/typebox": "~0.31.8"
     }
   },
   "engines": {

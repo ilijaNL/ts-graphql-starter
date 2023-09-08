@@ -78,7 +78,7 @@ const providerGetProfileMap: ProviderGetProfile = {
     } = await request('https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))', {
       method: 'GET',
       headers: { Authorization: `Bearer ${access_token}` },
-    }).then((d) => d.body.json());
+    }).then((d) => d.body.json() as any);
 
     const locale = profile.firstName?.preferredLocale?.language?.slice(0, 2);
     const displayName = `${profile.localizedFirstName}`;
