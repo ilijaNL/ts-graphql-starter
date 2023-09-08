@@ -1,50 +1,15 @@
-import { TypedDocumentNode } from '@graphql-typed-document-node/core';
-import { DocumentNode, OperationDefinitionNode, OperationTypeNode, print as _print, getOperationAST } from 'graphql';
-
-export const extractOperationName = (document: DocumentNode): string => {
-  let operationName = undefined;
-
-  const operationDefinitions = document.definitions.filter(
-    (definition) => definition.kind === `OperationDefinition`
-  ) as OperationDefinitionNode[];
-
-  if (operationDefinitions.length === 1) {
-    operationName = operationDefinitions[0]?.name?.value;
-  }
-
-  return operationName ?? '';
-};
-
-const queries = new WeakMap<DocumentNode, string>();
-
-export function print(doc: DocumentNode) {
-  if (queries.has(doc)) {
-    return queries.get(doc)!;
-  }
-
-  const value = _print(doc);
-  queries.set(doc, value);
-  return value;
-}
+import { TypedDocumentString } from '@/__generated__/user';
+import { getDocumentInfoFromNode } from './graphql';
 
 export const proxyFetch = <TData, TVars>(
-  documentNode: TypedDocumentNode<TData, TVars>,
+  documentNode: TypedDocumentString<TData, TVars>,
   variables?: TVars,
   headers?: HeadersInit,
   url = '/api/g'
 ) => {
-  const operationName = extractOperationName(documentNode);
-  if (!operationName) {
-    throw new Error('operationName not specified');
-  }
+  const { operationName, operationType } = getDocumentInfoFromNode(documentNode);
 
-  const operationType = getOperationAST(documentNode, operationName);
-
-  if (!operationType) {
-    throw new Error('unknown operationType');
-  }
-
-  if (operationType.operation === OperationTypeNode.QUERY) {
+  if (operationType === 'query') {
     const params = new URLSearchParams({
       op: operationName,
     });
@@ -56,11 +21,11 @@ export const proxyFetch = <TData, TVars>(
     return graphFetch<TData>('GET', undefined, headers, url + '?' + params.toString());
   }
 
-  if (operationType.operation === OperationTypeNode.MUTATION) {
+  if (operationType === 'mutation') {
     return graphFetch<TData>(
       'POST',
       JSON.stringify({
-        op: print(documentNode),
+        op: operationName,
         v: variables,
       }),
       headers,

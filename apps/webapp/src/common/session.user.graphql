@@ -1,0 +1,17 @@
+query GetMe {
+  me: auth_get_me {
+    id
+    token_version
+    updated_at
+    providers {
+      id
+      provider
+    }
+    info {
+      avatar_url
+      locale
+      id
+      display_name
+    }
+  }
+}

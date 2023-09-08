@@ -134,22 +134,25 @@ export const signOut = () =>
 
 export function createAuthHooks<TContract extends RPCContract>(executeFn: ExecuteFn<TContract>) {
   function useMutation<T extends keyof TContract>(
-    context: AuthContext,
     method: T extends MutationKeys<TContract> ? T : never,
-    options?: Omit<UseMutationOptions<InferOutput<TContract[T]>, any, InferOutput<TContract[T]>>, 'mutationFn'>
+    options?: Omit<UseMutationOptions<InferOutput<TContract[T]>, any, InferOutput<TContract[T]>>, 'mutationFn'> &
+      Partial<{ reqContext: AuthContext }>
   ) {
     return _useMutation(async (input: InferInput<TContract[T]>) => {
-      const headers = await getAuthHeaders(context);
+      const headers = await getAuthHeaders(options?.reqContext ?? { role: 'user' });
       return executeFn(method, input, headers);
     }, options);
   }
 
   function useQuery<T extends keyof TContract>(
-    context: AuthContext,
     method: T extends QueryKeys<TContract> ? T : never,
     input: InferInput<TContract[T]>,
-    options?: Omit<UseQueryOptions<InferOutput<TContract[T]>>, 'queryKey' | 'queryFn'>
+    options?: Omit<
+      UseQueryOptions<InferOutput<TContract[T]>> & Partial<{ reqContext: AuthContext }>,
+      'queryKey' | 'queryFn'
+    >
   ) {
+    const context = options?.reqContext ?? { role: 'user' };
     const key = [executeFn.url, context, method, input] as const;
     return _useQuery(key, async () => executeFn(method, input, await getAuthHeaders(context)), options);
   }

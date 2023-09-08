@@ -58,7 +58,7 @@ const UserSettings = () => {
   const theme = useMantineTheme();
   const localImageInput = useLocalImage();
 
-  const { mutate: deleteAccount, isLoading: isDeleting } = accountHooks.useMutation(authContext, 'delete', {
+  const { mutate: deleteAccount, isLoading: isDeleting } = accountHooks.useMutation('delete', {
     onSuccess: () => {
       signOut();
     },

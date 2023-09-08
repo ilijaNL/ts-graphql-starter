@@ -14,6 +14,8 @@ import { domainIsAllowed } from '@/domains';
 import { createQueryBuilder } from '@/utils/kysely';
 import { createMigrations } from './lib/migrations';
 import { migrate } from '@/utils/migration';
+import { kyselyCodegenForSchema } from '@/utils/kysely-codegen';
+import path from 'node:path';
 
 /**
  * Setup the service and expose as authService
@@ -36,6 +38,14 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
     migrations: createMigrations({ schema: dbSchema }),
     migrationTable: '_migrations',
   });
+
+  if (ENVS.NODE_ENV === 'development') {
+    await kyselyCodegenForSchema(
+      ENVS.PG_CONNECTION,
+      dbSchema,
+      path.join(__dirname, '__generated__', `${dbSchema}-db.d.ts`)
+    );
+  }
 
   const authService = createAuth({
     pgSchema: dbSchema,

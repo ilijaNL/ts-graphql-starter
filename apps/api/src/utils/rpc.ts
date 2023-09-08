@@ -19,18 +19,24 @@ export type Handler<Input, Output, Context> =
   | ((input: Input, context: Context) => Output)
   | { handler: (input: Input, context: Context) => Output; extensions?: RouteShorthandOptions };
 
-export const wrapHandle = <T extends RPCDef, Context, TName>(
+const wrapHandle = <T extends RPCDef, Context, TName>(
   name: TName,
   def: T,
-  handler: Handler<InferInput<T>, Promise<InferOutput<T>>, Context>
+  handler: Handler<InferInput<T>, Promise<InferOutput<T>>, Context>,
+  skip_validation: boolean
 ): ExecutableProcedure<Context, T, TName> => {
-  const check = createValidateFn(def.input);
+  const check = skip_validation ? undefined : createValidateFn(def.input);
+
   const executeFn = typeof handler === 'function' ? handler : handler.handler;
   const res: ExecutableProcedure<Context, T, TName> = {
     def: def,
     name: name,
     extensions: typeof handler === 'function' ? undefined : handler.extensions,
     execute(input, ctx) {
+      if (!check) {
+        return executeFn(input, ctx);
+      }
+
       if (check(input)) {
         return executeFn(input, ctx);
       }
@@ -57,10 +63,10 @@ export type ProcedureHandlers<Op extends RPCContract, Context = unknown> = {
   [P in keyof Op]: ExecutableProcedure<Context, Op[P], P>;
 };
 
-export const createProcedures = <T extends RPCContract>(operations: T) => {
+export const createProcedures = <T extends RPCContract>(operations: T, skip_validation = true) => {
   return function handlers<Ctx>(handlers: ProcedureImpl<T, Ctx>) {
     return (Object.keys(operations) as Array<keyof T>).reduce((agg, key) => {
-      const res = wrapHandle(key, operations[key], handlers[key]);
+      const res = wrapHandle(key, operations[key], handlers[key], skip_validation);
       agg[key] = res;
       return agg;
     }, {} as ProcedureHandlers<T, Ctx>);
@@ -99,7 +105,7 @@ export const toPlugin = <T extends RPCContract, TContext = unknown>(
     });
 
     // registery mutations
-    (Object.entries(procedures) as [string, typeof procedures[keyof T]][])
+    (Object.entries(procedures) as [string, (typeof procedures)[keyof T]][])
       .filter(([, spec]) => spec.def.type === 'mutation')
       .forEach(([method, spec]) => {
         fastify.post(
@@ -113,7 +119,7 @@ export const toPlugin = <T extends RPCContract, TContext = unknown>(
       });
 
     // registery queries
-    (Object.entries(procedures) as [string, typeof procedures[keyof T]][])
+    (Object.entries(procedures) as [string, (typeof procedures)[keyof T]][])
       .filter(([, spec]) => spec.def.type === 'query')
       .forEach(([method, spec]) => {
         fastify.get(

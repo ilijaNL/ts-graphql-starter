@@ -1,4 +1,3 @@
-import { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import {
   QueryKey,
   UseMutationOptions,
@@ -8,12 +7,13 @@ import {
   UseQueryResult,
 } from '@tanstack/react-query';
 import { AuthContext, getAuthHeaders } from './auth';
-import { extractOperationName, proxyFetch } from './graphql-fetch';
+import { proxyFetch } from './graphql-fetch';
+import { TypedDocumentString } from '@/__generated__/user';
 
 export type ReqVariables = Record<string, unknown>;
 
 export const authFetch = async <TData, TVariables extends ReqVariables | undefined>(
-  doc: TypedDocumentNode<TData, TVariables>,
+  doc: TypedDocumentString<TData, TVariables>,
   variables: TVariables,
   context: AuthContext
 ) => {
@@ -27,18 +27,14 @@ export function useQuery<
   TError = unknown,
   TData = TQueryFnData
 >(
-  documentNode: TypedDocumentNode<TQueryFnData, TVars>,
+  documentNode: TypedDocumentString<TQueryFnData, TVars>,
   variables: TVars,
   options?: UseQueryOptions<TQueryFnData, TError, TData>
 ): UseQueryResult<TData, TError> {
-  const disabled = options?.enabled === false || !variables;
   // construct key
-  const key = [extractOperationName(documentNode), variables] as const;
+  const key = [documentNode.toString(), variables] as const;
 
-  return _useQuery(key as QueryKey, () => proxyFetch(documentNode, variables), {
-    ...options,
-    enabled: !disabled,
-  });
+  return _useQuery(key as QueryKey, () => proxyFetch(documentNode, variables), options);
 }
 
 /**
@@ -56,14 +52,14 @@ export function useAuthQuery<
   TError = unknown,
   TData = TQueryFnData
 >(
-  documentNode: TypedDocumentNode<TQueryFnData, TVars>,
+  documentNode: TypedDocumentString<TQueryFnData, TVars>,
   variables: TVars,
-  authContext: AuthContext,
-  options?: UseQueryOptions<TQueryFnData, TError, TData>
+  options?: UseQueryOptions<TQueryFnData, TError, TData> & Partial<{ reqContext: AuthContext }>
 ): UseQueryResult<TData, TError> {
   const disabled = options?.enabled === false || !variables;
+  const authContext = options?.reqContext ?? { role: 'user' };
   // construct key
-  const key = [extractOperationName(documentNode), variables, authContext] as const;
+  const key = [documentNode.toString(), variables, authContext] as const;
 
   return _useQuery(key as QueryKey, () => authFetch(documentNode, variables as TVars, authContext), {
     ...options,
@@ -77,13 +73,13 @@ export const useUserQuery = <
   TError = unknown,
   TData = TQueryFnData
 >(
-  documentNode: TypedDocumentNode<TQueryFnData, TVars>,
+  documentNode: TypedDocumentString<TQueryFnData, TVars>,
   variables: TVars,
   options?: UseQueryOptions<TQueryFnData, TError, TData>
-) => useAuthQuery(documentNode, variables, { role: 'user' }, options);
+) => useAuthQuery(documentNode, variables, { ...options, reqContext: { role: 'user' } });
 
 export const useMutation = <TData, TVars extends ReqVariables | undefined = ReqVariables, TError = unknown>(
-  documentNode: TypedDocumentNode<TData, TVars>,
+  documentNode: TypedDocumentString<TData, TVars>,
   options?: UseMutationOptions<TData, TError, TVars>
 ) => {
   return _useMutation((payload: TVars) => proxyFetch(documentNode, payload), options);
@@ -97,9 +93,11 @@ export const useMutation = <TData, TVars extends ReqVariables | undefined = ReqV
  * @returns
  */
 export const useAuthMutation = <TData, TVars extends ReqVariables | undefined = ReqVariables, TError = unknown>(
-  documentNode: TypedDocumentNode<TData, TVars>,
-  context: AuthContext,
-  options?: UseMutationOptions<TData, TError, TVars>
+  documentNode: TypedDocumentString<TData, TVars>,
+  options?: UseMutationOptions<TData, TError, TVars> & Partial<{ reqContext: AuthContext }>
 ) => {
-  return _useMutation((payload: TVars) => authFetch(documentNode, payload as TVars, context), options);
+  return _useMutation(
+    (payload: TVars) => authFetch(documentNode, payload as TVars, options?.reqContext ?? { role: 'user' }),
+    options
+  );
 };

@@ -1,31 +1,11 @@
 import { useUserQuery } from './use-query';
 import { createContext, useMemo, useContext, PropsWithChildren, useEffect } from 'react';
 import { keyCache, refresh, signOut as signOutRemote } from './auth';
-import { graphql } from '@/__generated__/gql';
 import type { ResultOf } from '@graphql-typed-document-node/core';
 import Router from 'next/router';
+import { GetMeDocument } from '../__generated__/user';
 
-const MeDocument = graphql(/* GraphQL */ `
-  query GetMe {
-    me: auth_get_me {
-      id
-      token_version
-      updated_at
-      providers {
-        id
-        provider
-      }
-      info {
-        avatar_url
-        locale
-        id
-        display_name
-      }
-    }
-  }
-`);
-
-type User = ResultOf<typeof MeDocument>['me'][number];
+type User = ResultOf<typeof GetMeDocument>['me'][number];
 
 type AuthUser = {
   isAuthenticated: boolean;
@@ -43,7 +23,7 @@ const _AuthProvider: React.FC<PropsWithChildren> = (props) => {
     isLoading: isLoadingMe,
     refetch,
   } = useUserQuery(
-    MeDocument,
+    GetMeDocument,
     {},
     {
       refetchOnWindowFocus: false,

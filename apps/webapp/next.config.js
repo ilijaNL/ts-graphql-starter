@@ -5,6 +5,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 const bucketDomain = new URL(process.env.NEXT_APP_CDN).hostname;
 
 module.exports = withBundleAnalyzer({
+  pageExtensions: ['r.tsx', 'r.ts', /* 'page.jsx', 'page.js' */],
   i18n: {
     locales: ['en'],
     defaultLocale: 'en',

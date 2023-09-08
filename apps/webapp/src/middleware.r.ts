@@ -12,6 +12,7 @@ export const config = {
 
 const baseDomain = process.env.NEXT_APP_BASE_DOMAIN!;
 const apiEndpoint = process.env.NEXT_APP_AUTH_ENDPOINT!;
+const authExecuteFn = createRPCExecute(auth.contract, apiEndpoint);
 
 /**
  * 1. Check if token & verifier exist
@@ -23,7 +24,6 @@ const apiEndpoint = process.env.NEXT_APP_AUTH_ENDPOINT!;
  */
 async function handleAuthorizedPath(req: NextRequest) {
   const url = req.nextUrl;
-  const executeFn = createRPCExecute(auth.contract, apiEndpoint);
   const token = url.searchParams.get('token');
   const verifier = req.cookies.get('pkce')?.value;
 
@@ -38,7 +38,7 @@ async function handleAuthorizedPath(req: NextRequest) {
 
   req.cookies.delete('pkce');
 
-  const refreshToken = await executeFn('redeem', { token, code_verifier: verifier }, {})
+  const refreshToken = await authExecuteFn('redeem', { token, code_verifier: verifier }, {})
     .then((d) => d.refreshToken)
     .catch((_) => '');
 
