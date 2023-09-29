@@ -1,6 +1,5 @@
-import type { QueryCreator } from 'kysely';
-import type { DB } from '../__generated__/auth-db';
 import { createSigner, createVerifier } from 'fast-jwt';
+import { AuthDBClient } from '../db';
 
 export type Provider =
   | 'email'
@@ -13,7 +12,6 @@ export type Provider =
   | 'microsoft';
 
 export type OAuthProviders = Exclude<Provider, 'email' | 'phone'>;
-export type QueryBuilder = QueryCreator<DB>;
 
 export type RequestToken = {
   account_id: string;
@@ -113,7 +111,7 @@ export const createJWTFactory = (props: JWTOptions) => {
 
 export type ProviderInput = { provider: Provider; provider_acc_id: string };
 
-export const addProviderQuery = (builder: QueryBuilder, account_id: string, input: ProviderInput) =>
+export const createAddProviderQuery = (builder: AuthDBClient, account_id: string, input: ProviderInput) =>
   builder
     .insertInto('account_providers')
     .values({
@@ -125,38 +123,6 @@ export const addProviderQuery = (builder: QueryBuilder, account_id: string, inpu
       cb.columns(['account_id', 'provider']).doUpdateSet({
         provider: input.provider,
         provider_account_id: input.provider_acc_id,
-      })
-    )
-    .compile();
-
-export const createAccountQuery = (builder: QueryBuilder, input: { id: string }) =>
-  builder
-    .insertInto('accounts')
-    .values({
-      disabled: false,
-      version: 1,
-      token_version: 1,
-      id: input.id,
-    })
-    .compile();
-
-export const setAccountInfoQuery = (
-  builder: QueryBuilder,
-  input: { account_id: string; displayName?: string; avatar_url?: string; locale?: string }
-) =>
-  builder
-    .insertInto('account_info')
-    .values({
-      account_id: input.account_id,
-      locale: input.locale,
-      avatar_url: input.avatar_url,
-      display_name: input.displayName,
-    })
-    .onConflict((oc) =>
-      oc.column('account_id').doUpdateSet({
-        locale: input.locale,
-        avatar_url: input.avatar_url,
-        display_name: input.displayName,
       })
     )
     .compile();

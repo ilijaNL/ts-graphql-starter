@@ -16,9 +16,9 @@ export type PGClient = {
   }>;
 };
 
-export type QueryCommand<Result> = {
-  text: string;
-  values: unknown[];
+export type QueryCommand<Result = unknown> = {
+  readonly sql: string;
+  readonly parameters: ReadonlyArray<unknown>;
   // used to keep the type definition and is always undefined
   __result?: Result;
 };
@@ -30,8 +30,8 @@ export function unsafeSQL<Result extends QueryResultRow>(
   const reduced: string = sqlFragments.reduce((prev, curr, i) => prev + parameters[i - 1] + curr);
 
   return {
-    text: reduced,
-    values: [],
+    sql: reduced,
+    parameters: [],
   };
 }
 
@@ -51,9 +51,9 @@ export function createSql(replacers: Array<{ re: RegExp; value: string }>) {
       cache.set(sqlFragments, text);
     }
 
-    const result = {
-      text: text,
-      values: parameters,
+    const result: QueryCommand<Result> = {
+      sql: text,
+      parameters: parameters,
     };
 
     return result;
@@ -67,8 +67,8 @@ export async function query<Result extends QueryResultRow>(
 ) {
   return client
     .query<Result>({
-      text: command.text,
-      values: command.values,
+      text: command.sql,
+      values: command.parameters as any[],
       ...opts,
     })
     .then((d) => d.rows);

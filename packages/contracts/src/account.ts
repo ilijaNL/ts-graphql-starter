@@ -1,7 +1,7 @@
 import { createRPC, Type, Static } from '@ts-hasura-starter/rpc';
 import { FileUploadData, ImageContentType, ImageExtension, Success, UploadData } from './utils';
 
-const LocaleSchema = Type.Union([Type.Literal('en')]);
+export const LocaleSchema = Type.Union([Type.Literal('en')]);
 
 export type Locale = Static<typeof LocaleSchema>;
 

@@ -4,7 +4,7 @@ import fastifyHelmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
 import cors from '@fastify/cors';
 import environment from './env';
-import { authService } from './services/auth';
+import { authPlugin } from './services/auth';
 import { domainIsAllowed } from './domains';
 
 const IS_PROD = environment.NODE_ENV === 'production';
@@ -52,7 +52,7 @@ const app: FastifyPluginAsync = async (fastify) => {
   await fastify.register(sensible);
 
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  fastify.register(authService, {
+  fastify.register(authPlugin, {
     prefix: '/auth',
   });
 

@@ -1,11 +1,12 @@
 import { createProcedures } from '@/utils/rpc';
-import { FastifyInstance } from 'fastify';
 import _merge from 'lodash/merge';
 import { auth, Static } from '@ts-hasura-starter/api';
 import { AccessToken } from '@/jwt';
-import { AuthService } from './lib';
 import createHttpError from 'http-errors';
-import { ShortToken } from './lib/common';
+import { ShortToken } from './auth/common';
+import { AuthService } from './auth';
+import { execute } from '@/utils/actions';
+import { Pool } from 'pg';
 
 const hasuraNamespace = 'hg';
 const defaultHasuraRole = 'user';
@@ -32,65 +33,72 @@ const hasuraUserRoleExtensions: AccessTokenExtension = (token, claim) => {
 // add more extensions to add more claims
 const EXTENSIONS: Array<AccessTokenExtension> = [hasuraUserRoleExtensions];
 
-export type ProcedureContext = {
-  fastify: FastifyInstance;
-  authService: AuthService;
-};
+export type ProcedureContext = {};
 
-export const authProcedures = createProcedures(auth.contract)<ProcedureContext>({
-  async sendOTP(input, { authService }) {
-    await authService.otp.sendOpt(input);
+export const createAuthProcedures = (deps: { authService: AuthService; pg: Pool }) =>
+  createProcedures(auth.contract)<ProcedureContext>({
+    async sendOTP() {
+      deps.authService.sendOTP();
 
-    return {
-      ok: true,
-    };
-  },
-  async signInWithOTP(input, { authService }) {
-    const { jwt_refresh_token } = await authService.otp.signInWithOTP({ token: input.token, value: input.value });
-    return {
-      refreshToken: jwt_refresh_token,
-    };
-  },
-  /**
-   * Redeem request token, which is generating from oauth flow
-   */
-  async redeem({ token, code_verifier }, { authService }) {
-    const { jwt_refresh_token } = await authService.oauth.redeem({ code_verifier, token });
+      return {
+        ok: true,
+      };
+    },
+    async signInWithOTP(input) {
+      // const { jwt_refresh_token } = await authService.signInWithOTP({ token: input.token, value: input.value });
 
-    return {
-      refreshToken: jwt_refresh_token,
-    };
-  },
-  async refresh({ rt }, { authService }) {
-    const { jwt_refresh_token } = await authService.refresh(rt);
-    return {
-      refreshToken: jwt_refresh_token,
-    };
-  },
-  async 'access-token'(input, { authService }) {
-    const { rt: refresh_token, claims } = input;
+      const result = await execute(deps.pg, deps.authService.signInWithOTP)(
+        { token: input.token, value: input.value },
+        null
+      );
 
-    const user_id = await authService.getUserId(refresh_token);
+      return {
+        refreshToken: result.jwt_refresh_token,
+      };
+    },
+    /**
+     * Redeem request token, which is generating from oauth flow
+     */
+    async redeem({ token, code_verifier }) {
+      const { jwt_refresh_token } = await execute(deps.pg, deps.authService.oauth.redeem)(
+        { code_verifier, token },
+        null
+      );
 
-    if (!user_id) {
-      throw new createHttpError.NotFound('user not found');
-    }
+      return {
+        refreshToken: jwt_refresh_token,
+      };
+    },
+    async refresh({ rt }) {
+      const { jwt_refresh_token } = await deps.authService.refresh(rt);
+      return {
+        refreshToken: jwt_refresh_token,
+      };
+    },
+    async 'access-token'(input) {
+      const { rt: refresh_token, claims } = input;
 
-    const shortToken: ShortToken = {
-      acc_id: user_id,
-      sub: user_id,
-    };
+      const user = await deps.authService.getUserFromToken(refresh_token);
 
-    const finalToken = await claims.reduce(
-      (agg, claim) =>
-        agg.then((d) =>
-          EXTENSIONS.reduce((agg, extension) => agg.then((r) => extension(r, claim)), Promise.resolve(d))
-        ),
-      Promise.resolve(shortToken)
-    );
+      if (!user) {
+        throw new createHttpError.NotFound('user not found');
+      }
 
-    return {
-      access_token: authService.jwtFactory.signShortToken(finalToken),
-    };
-  },
-});
+      const shortToken: ShortToken = {
+        acc_id: user.id,
+        sub: user.id,
+      };
+
+      const finalToken = await claims.reduce(
+        (agg, claim) =>
+          agg.then((d) =>
+            EXTENSIONS.reduce((agg, extension) => agg.then((r) => extension(r, claim)), Promise.resolve(d))
+          ),
+        Promise.resolve(shortToken)
+      );
+
+      return {
+        access_token: deps.authService.signShortToken(finalToken),
+      };
+    },
+  });
