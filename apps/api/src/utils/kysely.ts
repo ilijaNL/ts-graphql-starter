@@ -20,13 +20,6 @@ export function combine(queries: (QueryCommand | QueryCommand[])[]): string {
 }
 
 export async function combineAndExecute(client: PGClient, ...queries: QueryCommand[]): Promise<void> {
-  console.log(
-    JSON.stringify(
-      queries.map((q) => ({ query: q.sql, values: q.parameters })),
-      null,
-      2
-    )
-  );
   const queryText = combine(queries);
   await client.query({ text: queryText, values: [] });
 }

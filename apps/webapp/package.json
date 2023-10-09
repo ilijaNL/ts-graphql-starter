@@ -6,7 +6,7 @@
     "dev": "react-env --prefix NEXT_APP -- next",
     "build": "react-env --prefix NEXT_APP -- next build",
     "start": "react-env --prefix NEXT_APP -- next start",
-    "tc": "tsc --noEmit",
+    "tc": "tsc  --noEmit -p tsconfig.json",
     "lint": "eslint src",
     "gen": "graphql-codegen",
     "gen:watch": "graphql-codegen --watch"
@@ -26,7 +26,7 @@
     "@tabler/icons-react": "^2.34.0",
     "@tanstack/react-query": "^4.35.0",
     "@ts-hasura-starter/api": "workspace:*",
-    "@ts-hasura-starter/rpc": "workspace:*",
+    "typed-client": "workspace:*",
     "cookie": "^0.5.0",
     "date-fns": "^2.30.0",
     "dotenv-safe": "^8.2.0",

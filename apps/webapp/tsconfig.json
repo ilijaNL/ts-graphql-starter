@@ -1,7 +1,7 @@
 {
   "extends": "tsconfig/nextjs.json",
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES2019",
     "lib": ["dom", "dom.iterable", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
@@ -17,5 +17,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "./src/__generated__/**"]
+  "exclude": ["**/node_modules/**", "./src/__generated__/**"]
 }

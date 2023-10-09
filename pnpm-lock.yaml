@@ -1,7 +1,7 @@
 lockfileVersion: '6.0'
 
 overrides:
-  '@sinclair/typebox': ~0.31.8
+  '@sinclair/typebox': 0.31.8
 
 importers:
 
@@ -37,6 +37,9 @@ importers:
       '@fastify/helmet':
         specifier: ^10.1.1
         version: 10.1.1
+      '@fastify/jwt':
+        specifier: ^7.2.2
+        version: 7.2.2
       '@fastify/rate-limit':
         specifier: ^8.0.3
         version: 8.0.3
@@ -47,14 +50,11 @@ importers:
         specifier: ^3.5.0
         version: 3.5.0(@sinclair/typebox@0.31.8)
       '@sinclair/typebox':
-        specifier: ~0.31.8
+        specifier: 0.31.8
         version: 0.31.8
       '@ts-hasura-starter/api':
         specifier: workspace:*
-        version: link:../../packages/contracts
-      '@ts-hasura-starter/rpc':
-        specifier: workspace:*
-        version: link:../../packages/rpc
+        version: link:../../packages/api-contracts
       ajv:
         specifier: ^8.12.0
         version: 8.12.0
@@ -121,6 +121,9 @@ importers:
       tsconfig-paths:
         specifier: ^4.2.0
         version: 4.2.0
+      typed-client:
+        specifier: workspace:*
+        version: link:../../packages/typed-client
       undici:
         specifier: ^5.23.0
         version: 5.23.0
@@ -216,7 +219,7 @@ importers:
         specifier: ^6.0.20
         version: 6.0.20(@mantine/core@6.0.20)(@mantine/hooks@6.0.20)(react-dom@18.2.0)(react@18.2.0)
       '@sinclair/typebox':
-        specifier: ~0.31.8
+        specifier: 0.31.8
         version: 0.31.8
       '@tabler/icons-react':
         specifier: ^2.34.0
@@ -226,10 +229,7 @@ importers:
         version: 4.35.0(react-dom@18.2.0)(react@18.2.0)
       '@ts-hasura-starter/api':
         specifier: workspace:*
-        version: link:../../packages/contracts
-      '@ts-hasura-starter/rpc':
-        specifier: workspace:*
-        version: link:../../packages/rpc
+        version: link:../../packages/api-contracts
       cookie:
         specifier: ^0.5.0
         version: 0.5.0
@@ -269,6 +269,9 @@ importers:
       ts-pattern:
         specifier: ^4.3.0
         version: 4.3.0
+      typed-client:
+        specifier: workspace:*
+        version: link:../../packages/typed-client
     devDependencies:
       '@graphql-codegen/cli':
         specifier: ^5.0.0
@@ -322,27 +325,32 @@ importers:
         specifier: ^4.9.5
         version: 4.9.5
 
-  packages/contracts:
+  packages/api-contracts:
     dependencies:
-      '@ts-hasura-starter/rpc':
+      typed-client:
         specifier: workspace:*
-        version: link:../rpc
+        version: link:../typed-client
     devDependencies:
       typescript:
-        specifier: 4.7.4
-        version: 4.7.4
-
-  packages/rpc:
-    dependencies:
-      '@sinclair/typebox':
-        specifier: ~0.31.8
-        version: 0.31.8
-    devDependencies:
-      typescript:
-        specifier: 4.7.4
-        version: 4.7.4
+        specifier: ^4.9.5
+        version: 4.9.5
 
   packages/tsconfig: {}
+
+  packages/typed-client:
+    devDependencies:
+      '@sinclair/typebox':
+        specifier: 0.31.8
+        version: 0.31.8
+      '@types/tap':
+        specifier: ^15.0.9
+        version: 15.0.9
+      tap:
+        specifier: ^16.3.9
+        version: 16.3.9(typescript@4.9.5)
+      typescript:
+        specifier: ^4.9.5
+        version: 4.9.5
 
 packages:
 
@@ -1948,6 +1956,16 @@ packages:
       helmet: 6.2.0
     dev: false
 
+  /@fastify/jwt@7.2.2:
+    resolution: {integrity: sha512-ZF0lyEjEIJnwqe0zjeSQkjfpAIrKdZfhTwUM+Z74NFEN+WodDi12cjABFPm2CrI8jtc4KInytSA74bN2jJ0MGQ==}
+    dependencies:
+      '@fastify/error': 3.3.0
+      '@lukeed/ms': 2.0.1
+      fast-jwt: 3.3.1
+      fastify-plugin: 4.5.1
+      steed: 1.1.3
+    dev: false
+
   /@fastify/rate-limit@8.0.3:
     resolution: {integrity: sha512-7wbSKXGKKLI1VkpW2XvS7SFg4n4/uzYt0YA5O2pfCcM6PYaBSV3VhSKGJ9/hJceCSH+zNEDRrWpufqxbcDkTZg==}
     dependencies:
@@ -2673,6 +2691,11 @@ packages:
       '@jridgewell/sourcemap-codec': 1.4.15
     dev: true
 
+  /@lukeed/ms@2.0.1:
+    resolution: {integrity: sha512-Xs/4RZltsAL7pkvaNStUQt7netTkyxrS0K+RILcVr3TRMS/ToOg4I6uNfhB9SlGsnWBym4U+EaXq0f0cEMNkHA==}
+    engines: {node: '>=8'}
+    dev: false
+
   /@mantine/core@6.0.20(@emotion/react@11.11.1)(@mantine/hooks@6.0.20)(@types/react@18.0.31)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-v/51klCP3nRZIIv0tl8zvOHpksbEK6+AXr0PcQzLnV0KY9xEbV6mh6mEM/w6ygigXRMTQ3oSK85fX1JYg9xC6Q==}
     peerDependencies:
@@ -3277,7 +3300,6 @@ packages:
 
   /@sinclair/typebox@0.31.8:
     resolution: {integrity: sha512-1FdxgmuUqQWprlAHzGKTH3qSeNzbYnHXD65WIZOI037hcCZVw+r8SoFd8OIFUrbQxEI+MhHArCvKlndLvfw/bg==}
-    dev: false
 
   /@smithy/abort-controller@2.0.6:
     resolution: {integrity: sha512-4I7g0lyGUlW2onf8mD76IzU37oRWSHsQ5zlW5MjDzgg4I4J9bOK4500Gx6qOuoN7+GulAnGLe1YwyrIluzhakg==}
@@ -3834,6 +3856,12 @@ packages:
 
   /@types/tap@15.0.8:
     resolution: {integrity: sha512-ZfeoiZlLIaFi4t6wccwbTEicrHREkP0bOq8dZVi/nWvG5F8O7LlS2cSUZBiOW/D4cgWS/p2uhM3lJoyzFAl80w==}
+    dependencies:
+      '@types/node': 16.18.48
+    dev: true
+
+  /@types/tap@15.0.9:
+    resolution: {integrity: sha512-ewkqbmoYTsKC333VmdpUvxRl8/tDK2RRzR/BBCAuuFPgEvNp1vxqL2Dh812acDpmaBsgWkYORxy8e/RODrzMPw==}
     dependencies:
       '@types/node': 16.18.48
     dev: true
@@ -5683,6 +5711,16 @@ packages:
       mnemonist: 0.39.5
     dev: false
 
+  /fast-jwt@3.3.1:
+    resolution: {integrity: sha512-1YuuIJeh1hEvfcYDe89P2oGACWI5hd2GadRDKHalSxkc1Z0z8I6yzuVK6SF15sW09QZngTV6d7g4+TFL9bvs5A==}
+    engines: {node: '>=16 <22'}
+    dependencies:
+      '@lukeed/ms': 2.0.1
+      asn1.js: 5.4.1
+      ecdsa-sig-formatter: 1.0.11
+      mnemonist: 0.39.5
+    dev: false
+
   /fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
     dev: true
@@ -5713,6 +5751,13 @@ packages:
       strnum: 1.0.5
     dev: false
 
+  /fastfall@1.5.1:
+    resolution: {integrity: sha512-KH6p+Z8AKPXnmA7+Iz2Lh8ARCMr+8WNPVludm1LGkZoD2MjY6LVnRMtTKhkdzI+jr0RzQWXKzKyBJm1zoHEL4Q==}
+    engines: {node: '>=0.10.0'}
+    dependencies:
+      reusify: 1.0.4
+    dev: false
+
   /fastify-plugin@4.5.1:
     resolution: {integrity: sha512-stRHYGeuqpEZTL1Ef0Ovr2ltazUT9g844X5z/zEBFLG8RYlpDiOCIG+ATvYEp+/zmc7sN29mcIMp8gvYplYPIQ==}
     dev: false
@@ -5740,10 +5785,24 @@ packages:
       - supports-color
     dev: false
 
+  /fastparallel@2.4.1:
+    resolution: {integrity: sha512-qUmhxPgNHmvRjZKBFUNI0oZuuH9OlSIOXmJ98lhKPxMZZ7zS/Fi0wRHOihDSz0R1YiIOjxzOY4bq65YTcdBi2Q==}
+    dependencies:
+      reusify: 1.0.4
+      xtend: 4.0.2
+    dev: false
+
   /fastq@1.15.0:
     resolution: {integrity: sha512-wBrocU2LCXXa+lWBt8RoIRD89Fi8OdABODa/kEnyeyjS5aZO5/GNvI5sEINADqP/h8M29UHTHUb53sUu5Ihqdw==}
     dependencies:
       reusify: 1.0.4
+
+  /fastseries@1.7.2:
+    resolution: {integrity: sha512-dTPFrPGS8SNSzAt7u/CbMKCJ3s01N04s4JFbORHcmyvVfVKmbhMD1VtRbh5enGHxkaQDqWyLefiKOGGmohGDDQ==}
+    dependencies:
+      reusify: 1.0.4
+      xtend: 4.0.2
+    dev: false
 
   /fb-watchman@2.0.2:
     resolution: {integrity: sha512-p5161BqbuCaSnB8jIbzQHOlpgsPmK5rJVDfDKO91Axs5NC1uu3HRQm6wt9cd9/+GtQQIO53JdGXXoyDpTAsgYA==}
@@ -8788,6 +8847,16 @@ packages:
     engines: {node: '>= 0.8'}
     dev: false
 
+  /steed@1.1.3:
+    resolution: {integrity: sha512-EUkci0FAUiE4IvGTSKcDJIQ/eRUP2JJb56+fvZ4sdnguLTqIdKjSxUe138poW8mkvKWXW2sFPrgTsxqoISnmoA==}
+    dependencies:
+      fastfall: 1.5.1
+      fastparallel: 2.4.1
+      fastq: 1.15.0
+      fastseries: 1.7.2
+      reusify: 1.0.4
+    dev: false
+
   /streamsearch@1.1.0:
     resolution: {integrity: sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==}
     engines: {node: '>=10.0.0'}
@@ -9042,6 +9111,57 @@ packages:
       tap-yaml: 1.0.2
       tcompare: 5.0.7
       ts-node: 10.9.1(@types/node@16.18.48)(typescript@4.9.5)
+      typescript: 4.9.5
+      which: 2.0.2
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+    bundledDependencies:
+      - ink
+      - treport
+      - '@types/react'
+      - '@isaacs/import-jsx'
+      - react
+
+  /tap@16.3.9(typescript@4.9.5):
+    resolution: {integrity: sha512-KKmu12hRJhb/kGvVV/UKBOJ90sNoGbcXF0E+VmNqej1DqaCmZHyOXR8R7E66qg2Wor33XhSHGrku5MPYWSRNWw==}
+    engines: {node: '>=12'}
+    hasBin: true
+    peerDependencies:
+      coveralls: ^3.1.1
+      flow-remove-types: '>=2.112.0'
+      ts-node: '>=8.5.2'
+      typescript: '>=3.7.2'
+    peerDependenciesMeta:
+      coveralls:
+        optional: true
+      flow-remove-types:
+        optional: true
+      ts-node:
+        optional: true
+      typescript:
+        optional: true
+    dependencies:
+      chokidar: 3.5.3
+      findit: 2.0.0
+      foreground-child: 2.0.0
+      fs-exists-cached: 1.0.0
+      glob: 7.2.3
+      isexe: 2.0.0
+      istanbul-lib-processinfo: 2.0.3
+      jackspeak: 1.4.2
+      libtap: 1.4.1
+      minipass: 3.3.6
+      mkdirp: 1.0.4
+      nyc: 15.1.0
+      opener: 1.5.2
+      rimraf: 3.0.2
+      signal-exit: 3.0.7
+      source-map-support: 0.5.21
+      tap-mocha-reporter: 5.0.3
+      tap-parser: 11.0.2
+      tap-yaml: 1.0.2
+      tcompare: 5.0.7
       typescript: 4.9.5
       which: 2.0.2
     transitivePeerDependencies:
@@ -9416,12 +9536,6 @@ packages:
     resolution: {integrity: sha512-zdu8XMNEDepKKR+XYOXAVPtWui0ly0NtohUscw+UmaHiAWT8hrV1rr//H6V+0DvJ3OQ19S979M0laLfX8rm82Q==}
     dependencies:
       is-typedarray: 1.0.0
-    dev: true
-
-  /typescript@4.7.4:
-    resolution: {integrity: sha512-C0WQT0gezHuw6AdY1M2jxUO83Rjf0HP7Sk1DtXj6j1EwkQNZrHAg2XPWlq62oqEhYvONq5pkC2Y9oPljWToLmQ==}
-    engines: {node: '>=4.2.0'}
-    hasBin: true
     dev: true
 
   /typescript@4.9.5:

@@ -57,7 +57,7 @@ export function useAuthQuery<
   options?: UseQueryOptions<TQueryFnData, TError, TData> & Partial<{ reqContext: AuthContext }>
 ): UseQueryResult<TData, TError> {
   const disabled = options?.enabled === false || !variables;
-  const authContext = options?.reqContext ?? { role: 'user' };
+  const authContext = options?.reqContext ?? { type: 'user' };
   // construct key
   const key = [documentNode.toString(), variables, authContext] as const;
 
@@ -76,7 +76,7 @@ export const useUserQuery = <
   documentNode: TypedDocumentString<TQueryFnData, TVars>,
   variables: TVars,
   options?: UseQueryOptions<TQueryFnData, TError, TData>
-) => useAuthQuery(documentNode, variables, { ...options, reqContext: { role: 'user' } });
+) => useAuthQuery(documentNode, variables, { ...options, reqContext: { type: 'user' } });
 
 export const useMutation = <TData, TVars extends ReqVariables | undefined = ReqVariables, TError = unknown>(
   documentNode: TypedDocumentString<TData, TVars>,
@@ -97,7 +97,7 @@ export const useAuthMutation = <TData, TVars extends ReqVariables | undefined = 
   options?: UseMutationOptions<TData, TError, TVars> & Partial<{ reqContext: AuthContext }>
 ) => {
   return _useMutation(
-    (payload: TVars) => authFetch(documentNode, payload as TVars, options?.reqContext ?? { role: 'user' }),
+    (payload: TVars) => authFetch(documentNode, payload as TVars, options?.reqContext ?? { type: 'user' }),
     options
   );
 };

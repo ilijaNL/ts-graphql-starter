@@ -1,32 +1,46 @@
 import ENVS from '@/env';
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { createFastifyPool } from '@/utils/plugins/pg-pool';
-import { registerProcedures } from '@/utils/rpc';
-import { createAccountProcedures } from './account-procedures';
-import createHttpError from 'http-errors';
-import { getUserAuthFromRequest } from '@/jwt';
+import { getPoolFromFastify } from '@/utils/plugins/pg-pool';
 import { createMigrations } from './migrations';
 import { migrate } from '@/utils/migration';
 import { kyselyCodegenForSchema } from '@/utils/kysely-codegen';
 import path from 'node:path';
-import { createAccountService } from './account';
-import { createAuthService } from './auth';
-import { createAuthProcedures } from './service';
+import { AuthService, createAuthService } from './actions';
+import fp from 'fastify-plugin';
 import { oauth } from './oauth';
+import fastifyJWT from '@fastify/jwt';
+import { authRoutes } from './routes';
+
+export type AccessToken = {
+  acc_id: string;
+  sub: string;
+} & Record<string, unknown>;
+
+declare module '@fastify/jwt' {
+  interface FastifyJWT {
+    payload: AccessToken;
+  }
+}
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /**
+     * Authenticates the user and sets to `accessToken` to the request object.
+     *
+     * Use `request.user` to access the authenticated user object
+     * */
+    authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authService: AuthService;
+  }
+}
 
 /**
  * Setup the service and expose as authService
  */
-export const authPlugin: FastifyPluginAsyncTypebox<{ schema?: string }> = async (fastify, opts) => {
+const _authPlugin: FastifyPluginAsyncTypebox<{ schema?: string; prefix: string }> = async (fastify, opts) => {
   // SETUP
   const dbSchema = opts.schema ?? 'auth';
-
-  // create own pool
-  const pgPool = createFastifyPool(fastify, {
-    //
-    connectionString: ENVS.PG_CONNECTION,
-    max: 5,
-  });
+  const pgPool = getPoolFromFastify(fastify);
 
   // apply migrations for auth service
   await migrate({
@@ -44,35 +58,40 @@ export const authPlugin: FastifyPluginAsyncTypebox<{ schema?: string }> = async 
     );
   }
 
-  const accountService = createAccountService();
-  const authService = createAuthService({ accountService: accountService, pg: pgPool });
+  const authService = createAuthService(fastify);
 
-  void registerProcedures(fastify, createAuthProcedures({ authService: authService, pg: pgPool }), {
-    contextFactory(req) {
-      return {
-        fastify: req.server,
-        authService: authService,
-      };
+  const ISS = 'auth';
+  void fastify.register(fastifyJWT, {
+    secret: ENVS.ACCESS_TOKEN_SECRET,
+    sign: {
+      iss: ISS,
+    },
+    verify: {
+      allowedIss: [ISS],
+      cache: true,
     },
   });
 
-  void fastify.register(oauth, {
-    authService: authService,
-    pg: pgPool,
+  fastify.decorate('authenticate', async function authenticate(request, reply) {
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      void reply.send(err);
+    }
   });
 
-  void registerProcedures(fastify, createAccountProcedures(accountService, pgPool), {
-    prefix: '/account',
-    contextFactory(req) {
-      const user = getUserAuthFromRequest(req);
+  fastify.decorate('authService', authService);
 
-      if (!user) {
-        throw new createHttpError.Forbidden('not-authenticated');
-      }
-
-      return {
-        account_id: user.acc_id,
-      };
+  // register routes
+  void fastify.register(
+    async (fastify) => {
+      void fastify.register(authRoutes);
+      void fastify.register(oauth);
     },
-  });
+    {
+      prefix: opts.prefix,
+    }
+  );
 };
+
+export const authPlugin = fp(_authPlugin);

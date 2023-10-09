@@ -6,11 +6,11 @@
   "main": "index.js",
   "pnpm": {
     "overrides": {
-      "@sinclair/typebox": "~0.31.8"
+      "@sinclair/typebox": "0.31.8"
     }
   },
   "engines": {
-    "node": ">=16",
+    "node": ">=18",
     "pnpm": ">=7"
   },
   "scripts": {
@@ -27,8 +27,7 @@
     "start:apps": "turbo run start",
     "hasura": "hasura --skip-update-check --project ./graphql-engine",
     "hasura:metadata:apply": "pnpm run hasura metadata apply",
-    "hasura:console": "pnpm run hasura console",
-    "metadata:apply": "pnpm run hasura metadata apply"
+    "hasura:console": "pnpm run hasura console"
   },
   "keywords": [],
   "author": "ilijaNL",
