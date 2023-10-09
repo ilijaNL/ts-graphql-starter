@@ -1,22 +1,21 @@
 import fastifyCookie, { CookieSerializeOptions } from '@fastify/cookie';
 import { Type, FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import AUTH_ENV from './env';
-import type { AuthService } from './lib';
-import { OAuthProviders } from './lib/common';
-import { FlowSession } from './lib/oauth';
+import { OAuthProviders } from './actions/common';
+import { createFastifyExecute } from '@/utils/actions';
+import { FlowSession } from './actions/oauth';
 
 const SESSION_STORE_KEY = '__session_auth_store';
 
-export const oauth: FastifyPluginAsyncTypebox<{
-  authService: AuthService;
-}> = async (fastify, { authService }) => {
+export const oauth: FastifyPluginAsyncTypebox<{}> = async (app) => {
+  const execute = createFastifyExecute(app);
   // need cookie to store auth
-  await fastify.register(fastifyCookie, {
+  await app.register(fastifyCookie, {
     secret: AUTH_ENV.COOKIE_SECRET,
   });
 
   // start flow
-  fastify.route({
+  app.route({
     method: ['GET'],
     url: `/signin/:provider`,
     schema: {
@@ -30,7 +29,7 @@ export const oauth: FastifyPluginAsyncTypebox<{
       }),
     },
     handler: async function handler(req, reply) {
-      const { flowSession, location } = await authService.oauth.connect({
+      const { flowSession, location } = await execute(app.authService.oauth.connect)(null, {
         code_challenge: req.query.code_challenge,
         provider: req.params.provider as OAuthProviders,
         redirectUrl: req.query.redirectUrl,
@@ -59,7 +58,7 @@ export const oauth: FastifyPluginAsyncTypebox<{
    * Callback route for the oauth2 flow
    * happy path redirects to page with a request token
    */
-  fastify.route({
+  app.route({
     method: ['GET'],
     url: `/signin/:provider/callback`,
     schema: {
@@ -83,13 +82,13 @@ export const oauth: FastifyPluginAsyncTypebox<{
       const { value: decryptedSession, valid: vs } = req.unsignCookie(_session);
 
       if (!vs || !decryptedSession) {
-        fastify.log.error({ decryptedSession });
+        app.log.error({ decryptedSession });
         return reply.notFound();
       }
 
       const session = JSON.parse(decryptedSession) as FlowSession;
 
-      const { location } = await authService.oauth.callback({
+      const { location } = await execute(app.authService.oauth.callback)(null, {
         provider: req.params.provider as OAuthProviders,
         flowSession: session,
         query: req.query as any,

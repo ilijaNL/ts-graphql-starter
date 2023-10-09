@@ -1,3 +1,4 @@
+import { apiClient } from '@/api-client';
 import {
   createClearCookie,
   createCookie,
@@ -6,8 +7,6 @@ import {
   refreshCookieKey,
   refreshCookiePath,
 } from '@/common/edge';
-import { createRPCExecute } from '@/common/rpc/execute';
-import { auth } from '@ts-hasura-starter/api';
 
 export const config = {
   runtime: 'edge',
@@ -19,13 +18,10 @@ function getRefreshToken(req: Request): string | null {
   return refreshToken;
 }
 
-// nneed to define this since not embedded during build time
-const AUTH_URL = process.env.NEXT_APP_AUTH_ENDPOINT!;
-const executeFn = createRPCExecute(auth.contract, AUTH_URL);
-
 async function getNewToken(currentToken: string): Promise<string> {
-  return executeFn('refresh', { rt: currentToken }, {})
-    .then((d) => d.refreshToken ?? '')
+  return apiClient.auth
+    .refresh({ body: { rt: currentToken } })
+    .then((d) => (d.ok ? d.data.refreshToken : ''))
     .catch(() => '');
 }
 
@@ -63,18 +59,18 @@ export default async function handler(req: Request) {
       });
     }
 
-    // get access token
-    const body = await req.json();
-    const claims = body.claims;
-
-    const { access_token } = await executeFn(
-      'access-token',
-      {
-        claims: claims,
+    const access_token = await apiClient.auth['access-token']({
+      body: {
+        ...(await req.json()),
         rt: token,
       },
-      {}
-    );
+    }).then((d) => {
+      if (d.ok) {
+        return d.data.access_token;
+      }
+
+      throw d.error;
+    });
 
     return new Response(access_token);
   }

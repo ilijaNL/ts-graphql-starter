@@ -1,4 +1,3 @@
-import { accountContract, accountExecuteFn, accountHooks } from '@/common/rpc/account';
 import { useUser } from '@/common/session';
 import { useTranslation } from '@/common/translations/use-translation';
 import { createFormResolver } from '@/common/typebox-resolver';
@@ -19,7 +18,7 @@ import {
 } from '@mantine/core';
 import { showNotification } from '@mantine/notifications';
 import { Text } from '@mantine/core';
-import { account } from '@ts-hasura-starter/api';
+import { Static, account } from '@ts-hasura-starter/api';
 import { Controller, useForm } from 'react-hook-form';
 import If from '@/common/components/if';
 import ImageUpload from '@/common/components/image-upload';
@@ -28,17 +27,18 @@ import { Dropzone } from '@mantine/dropzone';
 import { IconPhoto, IconUpload, IconX } from '@tabler/icons-react';
 import { useLocalImage } from '@/common/hooks';
 import { useMutation } from '@tanstack/react-query';
-import { InferInput } from '@ts-hasura-starter/rpc';
-import { getAuthHeaders, signOut } from '@/common/auth';
+import { signOut } from '@/common/auth';
 import { getImagePath, isNextJSImage } from '@/config';
 import Image from 'next/image';
 import { modals } from '@mantine/modals';
+import { useClientMutation } from '@/common/builder-hooks';
+import { apiClient } from '@/api-client';
 
-type ChangeProfileInfoForm = InferInput<typeof accountContract.update_account_info>;
+type ChangeProfileInfoForm = Static<typeof account.contract.update_account_info.body>;
 
 const UserSettings = () => {
   const { t } = useTranslation();
-  const { user, authContext, refresh } = useUser();
+  const { user, refresh } = useUser();
 
   const {
     formState: { isDirty, errors },
@@ -48,7 +48,7 @@ const UserSettings = () => {
     register,
     reset,
   } = useForm({
-    resolver: createFormResolver(accountContract.update_account_info.input),
+    resolver: createFormResolver(account.contract.update_account_info.body),
     defaultValues: {
       displayName: user.info?.display_name,
       locale: (user.info?.locale as account.Locale) ?? 'en',
@@ -58,7 +58,7 @@ const UserSettings = () => {
   const theme = useMantineTheme();
   const localImageInput = useLocalImage();
 
-  const { mutate: deleteAccount, isLoading: isDeleting } = accountHooks.useMutation('delete', {
+  const { mutate: deleteAccount, isLoading: isDeleting } = useClientMutation(apiClient.me.delete, {
     onSuccess: () => {
       signOut();
     },
@@ -70,18 +70,23 @@ const UserSettings = () => {
     isLoading: isChanging,
   } = useMutation(
     async (value: ChangeProfileInfoForm) => {
-      const headers = await getAuthHeaders(authContext);
       let image: { sig: string; path: string } | undefined = undefined;
       if (localImageInput.image) {
         const img = localImageInput.image;
-        const getSignedDataRes = await accountExecuteFn(
-          'get_avatar_upload_link',
-          {
-            contentType: img.type as any,
-            extension: img.name.split('.').pop()! as any,
-          },
-          headers
-        );
+
+        const getSignedDataRes = await apiClient.me
+          .get_avatar_upload_link({
+            body: {
+              contentType: img.type as any,
+              extension: img.name.split('.').pop()! as any,
+            },
+          })
+          .then((d) => {
+            if (d.ok) {
+              return d.data;
+            }
+            throw d.error;
+          });
 
         const data: Record<string, any> = {
           ...getSignedDataRes.signed_data.fields,
@@ -110,14 +115,19 @@ const UserSettings = () => {
         };
       }
 
-      return accountExecuteFn(
-        'update_account_info',
-        {
-          ...value,
-          image: image,
-        },
-        headers
-      );
+      return apiClient.me
+        .update_account_info({
+          body: {
+            ...value,
+            image: image,
+          },
+        })
+        .then((d) => {
+          if (d.ok) {
+            return d.data;
+          }
+          throw d.error;
+        });
     },
     {
       onSuccess() {

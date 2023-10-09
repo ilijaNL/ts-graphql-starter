@@ -1,8 +1,7 @@
 import { NextMiddleware, NextRequest, NextResponse } from 'next/server';
 import { createCookie, createRefreshCookieOps, refreshCookieKey } from './common/edge';
-import { createRPCExecute } from '@/common/rpc/execute';
-import { auth } from '@ts-hasura-starter/api';
 import { routes } from './routes';
+import { apiClient } from './api-client';
 
 const AuthorizedPath = '/__authorized';
 
@@ -11,8 +10,6 @@ export const config = {
 };
 
 const baseDomain = process.env.NEXT_APP_BASE_DOMAIN!;
-const apiEndpoint = process.env.NEXT_APP_AUTH_ENDPOINT!;
-const authExecuteFn = createRPCExecute(auth.contract, apiEndpoint);
 
 /**
  * 1. Check if token & verifier exist
@@ -38,9 +35,11 @@ async function handleAuthorizedPath(req: NextRequest) {
 
   req.cookies.delete('pkce');
 
-  const refreshToken = await authExecuteFn('redeem', { token, code_verifier: verifier }, {})
-    .then((d) => d.refreshToken)
-    .catch((_) => '');
+  const refreshToken = await apiClient.auth
+    .redeem({
+      body: { token, code_verifier: verifier },
+    })
+    .then((d) => (d.ok ? d.data.refreshToken : ''));
 
   if (!refreshToken || refreshToken.length < 10) {
     url.pathname = routes.login;

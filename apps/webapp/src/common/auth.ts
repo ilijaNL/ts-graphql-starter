@@ -1,26 +1,15 @@
 import TinyCache from './tiny-cache';
 // @ts-ignore
 import stableStringify from 'safe-stable-stringify';
-import { match } from 'ts-pattern';
-import { ExecuteFn } from './rpc/execute';
-import { MutationKeys, QueryKeys } from './rpc/hooks';
-import {
-  useMutation as _useMutation,
-  UseMutationOptions,
-  useQuery as _useQuery,
-  UseQueryOptions,
-} from '@tanstack/react-query';
 import getClientConfig from '@/config';
-import { InferInput, InferOutput, RPCContract } from '@ts-hasura-starter/rpc';
 import { generatePKCEChallenge, generatePKCEVerifier } from './hash';
+import { InferBody } from 'typed-client';
+import { apiClient } from '@/api-client';
+import { auth } from '@ts-hasura-starter/api';
 
 export const keyCache = new TinyCache<string, Promise<string>>();
 
-interface UserContext {
-  role: 'user';
-}
-
-export type AuthContext = UserContext;
+export type AuthContext = InferBody<(typeof auth)['contract']['access-token']>['token'];
 
 /**
  * To improve this, sort the keys first and then stringify
@@ -53,7 +42,7 @@ export const getAuthHeaders = async (context: AuthContext) => {
 };
 
 export const requestSignInEmail = async (email: string) => {
-  return fetch(`${getClientConfig('AUTH_ENDPOINT')}/signin/email`, {
+  return fetch(`${getClientConfig('API')}/auth/signin/email`, {
     method: 'POST',
     mode: 'cors',
     headers: {
@@ -70,28 +59,20 @@ export const requestSignInEmail = async (email: string) => {
 };
 
 async function fetchAccessToken(context: AuthContext): Promise<string> {
-  const roleClaim = match(context)
-    .with({ role: 'user' }, (r) => ({ type: 'hasura', role: r.role }))
-    .exhaustive();
-
-  const resp = await fetch('/api/id-token?intent=access', {
-    method: 'POST',
-    body: JSON.stringify({
-      claims: [roleClaim],
-    }),
+  const resp = await apiClient.tokens.access({
+    query: {
+      intent: 'access',
+    },
+    body: {
+      token: context,
+    },
   });
 
   if (!resp.ok) {
     throw new Error('unauthorized');
   }
 
-  const access_token = await resp.text();
-
-  if (!access_token) {
-    throw new Error('unauthorized');
-  }
-
-  return access_token;
+  return resp.data;
 }
 
 export const supported_providers = {
@@ -102,7 +83,7 @@ export const supported_providers = {
 type Providers = (typeof supported_providers)[keyof typeof supported_providers];
 
 export const redirectOAuth = async (provider: Providers) => {
-  const redirectUrl = new URL(`${getClientConfig('AUTH_ENDPOINT')}/signin/${provider}`);
+  const redirectUrl = new URL(`${getClientConfig('API')}/auth/signin/${provider}`);
 
   const authorizePath = '/__authorized';
 
@@ -117,9 +98,10 @@ export const redirectOAuth = async (provider: Providers) => {
 };
 
 export const refresh = async () => {
-  return fetch(`/api/id-token?intent=refresh`, {
-    method: 'POST',
-    credentials: 'same-origin',
+  return apiClient.tokens.refresh({
+    query: {
+      intent: 'refresh',
+    },
   });
 };
 
@@ -131,34 +113,3 @@ export const signOut = () =>
   }).then(() => {
     window.location.href = `${window.location.origin}/`;
   });
-
-export function createAuthHooks<TContract extends RPCContract>(executeFn: ExecuteFn<TContract>) {
-  function useMutation<T extends keyof TContract>(
-    method: T extends MutationKeys<TContract> ? T : never,
-    options?: Omit<UseMutationOptions<InferOutput<TContract[T]>, any, InferOutput<TContract[T]>>, 'mutationFn'> &
-      Partial<{ reqContext: AuthContext }>
-  ) {
-    return _useMutation(async (input: InferInput<TContract[T]>) => {
-      const headers = await getAuthHeaders(options?.reqContext ?? { role: 'user' });
-      return executeFn(method, input, headers);
-    }, options);
-  }
-
-  function useQuery<T extends keyof TContract>(
-    method: T extends QueryKeys<TContract> ? T : never,
-    input: InferInput<TContract[T]>,
-    options?: Omit<
-      UseQueryOptions<InferOutput<TContract[T]>> & Partial<{ reqContext: AuthContext }>,
-      'queryKey' | 'queryFn'
-    >
-  ) {
-    const context = options?.reqContext ?? { role: 'user' };
-    const key = [executeFn.url, context, method, input] as const;
-    return _useQuery(key, async () => executeFn(method, input, await getAuthHeaders(context)), options);
-  }
-
-  return {
-    useMutation,
-    useQuery,
-  };
-}

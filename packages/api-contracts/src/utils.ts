@@ -1,4 +1,4 @@
-import { TSchema, Type } from '@ts-hasura-starter/rpc';
+import { TSchema, Type } from 'typed-client';
 
 export const Nullable = <T extends TSchema>(type: T) => Type.Union([type, Type.Null()]);
 export const Uuid = Type.String({ format: 'uuid' });

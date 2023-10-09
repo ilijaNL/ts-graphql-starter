@@ -3,7 +3,7 @@ import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { parseEnvs } from './env';
 import { Type } from '@sinclair/typebox';
 import { createHmac } from 'node:crypto';
-import { createPresignedPost } from '@aws-sdk/s3-presigned-post';
+import { PresignedPost, createPresignedPost } from '@aws-sdk/s3-presigned-post';
 
 export const S3_ENV = parseEnvs(
   Type.Object({
@@ -48,10 +48,19 @@ function signPath(path: string) {
   return createHmac('sha256', S3_ENV.STORAGE_SECRET_KEY).update(path).digest('hex');
 }
 
+export type IsValidPathFn = (props: { path: string; sig: string }) => boolean;
+
 export function isValidPath(props: { path: string; sig: string }) {
   const expected = signPath(props.path);
   return expected === props.sig;
 }
+
+export type GenerateSignedUrlFn = (props: GenerateSignedUrlProps) => Promise<{
+  fileLocation: string;
+  path: string;
+  path_sig: string;
+  signed_data: PresignedPost;
+}>;
 
 export async function generateSignedUrl(props: GenerateSignedUrlProps) {
   const s3Params = {

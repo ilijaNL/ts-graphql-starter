@@ -1,35 +1,46 @@
 import ENVS from '@/env';
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import type { DB } from './__generated__/auth-db';
-import { oauth } from './oauth';
-import { authProcedures } from './service';
-import { createFastifyPool } from '@/utils/plugins/pg-pool';
-import { registerProcedures } from '@/utils/rpc';
-import { accountProcedures } from './account';
-import createHttpError from 'http-errors';
-import { getUserAuthFromRequest } from '@/jwt';
-import { createAuth } from './lib';
-import AUTH_ENV from './env';
-import { domainIsAllowed } from '@/domains';
-import { createQueryBuilder } from '@/utils/kysely';
-import { createMigrations } from './lib/migrations';
+import { getPoolFromFastify } from '@/utils/plugins/pg-pool';
+import { createMigrations } from './migrations';
 import { migrate } from '@/utils/migration';
 import { kyselyCodegenForSchema } from '@/utils/kysely-codegen';
 import path from 'node:path';
+import { AuthService, createAuthService } from './actions';
+import fp from 'fastify-plugin';
+import { oauth } from './oauth';
+import fastifyJWT from '@fastify/jwt';
+import { authRoutes } from './routes';
+
+export type AccessToken = {
+  acc_id: string;
+  sub: string;
+} & Record<string, unknown>;
+
+declare module '@fastify/jwt' {
+  interface FastifyJWT {
+    payload: AccessToken;
+  }
+}
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    /**
+     * Authenticates the user and sets to `accessToken` to the request object.
+     *
+     * Use `request.user` to access the authenticated user object
+     * */
+    authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authService: AuthService;
+  }
+}
 
 /**
  * Setup the service and expose as authService
  */
-export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async (fastify, opts) => {
+const _authPlugin: FastifyPluginAsyncTypebox<{ schema?: string; prefix: string }> = async (fastify, opts) => {
   // SETUP
   const dbSchema = opts.schema ?? 'auth';
-
-  // create own pool
-  const pgPool = createFastifyPool(fastify, {
-    //
-    connectionString: ENVS.PG_CONNECTION,
-    max: 5,
-  });
+  const pgPool = getPoolFromFastify(fastify);
 
   // apply migrations for auth service
   await migrate({
@@ -47,83 +58,40 @@ export const authService: FastifyPluginAsyncTypebox<{ schema?: string }> = async
     );
   }
 
-  const authService = createAuth({
-    pgSchema: dbSchema,
-    db: pgPool,
-    jwt: {
-      iss: 'auth',
-      secret: AUTH_ENV.ACCESS_TOKEN_SECRET,
-      shortTokenInSec: parseInt(AUTH_ENV.JWT_ACCESS_TOKEN_EXPIRATION_TIME),
-      refreshTokenInSec: parseInt(AUTH_ENV.JWT_REFRESH_TOKEN_EXPIRATION_TIME),
+  const authService = createAuthService(fastify);
+
+  const ISS = 'auth';
+  void fastify.register(fastifyJWT, {
+    secret: ENVS.ACCESS_TOKEN_SECRET,
+    sign: {
+      iss: ISS,
     },
-    oauth: {
-      authURL: AUTH_ENV.AUTH_URL,
-      async validateUrl(redirectUrl) {
-        return domainIsAllowed(redirectUrl);
-      },
-      oauthProviders: {
-        google:
-          AUTH_ENV.GOOGLE_OAUTH_CLIENT_ID && AUTH_ENV.GOOGLE_OAUTH_SECRET
-            ? {
-                key: AUTH_ENV.GOOGLE_OAUTH_CLIENT_ID,
-                secret: AUTH_ENV.GOOGLE_OAUTH_SECRET,
-                scope: ['profile', 'openid', 'email'],
-              }
-            : undefined,
-        linkedin:
-          AUTH_ENV.LINKEDIN_OAUTH_CLIENT_ID && AUTH_ENV.LINKEDIN_OAUTH_SECRET
-            ? {
-                key: AUTH_ENV.LINKEDIN_OAUTH_CLIENT_ID,
-                secret: AUTH_ENV.LINKEDIN_OAUTH_SECRET,
-                pkce: false,
-                scope: ['r_emailaddress', 'r_liteprofile'],
-              }
-            : undefined,
-        microsoft:
-          AUTH_ENV.MICROSOFT_OAUTH_CLIENT_ID && AUTH_ENV.MICROSOFT_OAUTH_SECRET
-            ? {
-                key: AUTH_ENV.MICROSOFT_OAUTH_CLIENT_ID,
-                secret: AUTH_ENV.MICROSOFT_OAUTH_SECRET,
-                scope: ['openid', 'email'],
-              }
-            : undefined,
-      },
+    verify: {
+      allowedIss: [ISS],
+      cache: true,
     },
   });
 
-  fastify.addHook('onClose', () => authService.stop());
-
-  const qb = createQueryBuilder<DB>(pgPool, dbSchema);
-
-  void fastify.register(oauth, {
-    authService: authService,
+  fastify.decorate('authenticate', async function authenticate(request, reply) {
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      void reply.send(err);
+    }
   });
 
-  void registerProcedures(fastify, authProcedures, {
-    contextFactory(req) {
-      return {
-        fastify: req.server,
-        authService: authService,
-      };
+  fastify.decorate('authService', authService);
+
+  // register routes
+  void fastify.register(
+    async (fastify) => {
+      void fastify.register(authRoutes);
+      void fastify.register(oauth);
     },
-  });
-
-  void registerProcedures(fastify, accountProcedures, {
-    prefix: '/account',
-    contextFactory(req) {
-      const user = getUserAuthFromRequest(req);
-
-      if (!user) {
-        throw new createHttpError.Forbidden('not-authenticated');
-      }
-
-      return {
-        fastify: req.server,
-        builder: qb,
-        authService,
-        pool: pgPool,
-        account_id: user.acc_id,
-      };
-    },
-  });
+    {
+      prefix: opts.prefix,
+    }
+  );
 };
+
+export const authPlugin = fp(_authPlugin);

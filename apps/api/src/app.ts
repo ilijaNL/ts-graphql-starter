@@ -1,11 +1,13 @@
 import { FastifyPluginAsync, FastifyServerOptions, RouteOptions } from 'fastify';
-import fp from 'fastify-plugin';
 import fastifyHelmet from '@fastify/helmet';
 import sensible from '@fastify/sensible';
 import cors from '@fastify/cors';
 import environment from './env';
-import { authService } from './services/auth';
 import { domainIsAllowed } from './domains';
+import { authPlugin } from './services/auth';
+import { accountPlugin } from './services/account';
+import { registerPool } from './utils/plugins/pg-pool';
+import ENVS from './env';
 
 const IS_PROD = environment.NODE_ENV === 'production';
 
@@ -40,20 +42,24 @@ const app: FastifyPluginAsync = async (fastify) => {
   });
 
   if (!IS_PROD) {
-    await fastify.register(
-      fp(async function (instance) {
-        instance.addHook('onRoute', (route: RouteOptions) => {
-          instance.log.info(`${route.url}`);
-        });
-      })
-    );
+    fastify.addHook('onRoute', (route: RouteOptions) => {
+      fastify.log.info(`${route.url}`);
+    });
   }
 
-  await fastify.register(sensible);
+  void fastify.register(sensible);
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  fastify.register(authService, {
+  void registerPool(fastify, {
+    connectionString: ENVS.PG_CONNECTION,
+    max: 16,
+  });
+
+  void fastify.register(authPlugin, {
     prefix: '/auth',
+  });
+
+  void fastify.register(accountPlugin, {
+    prefix: '/account',
   });
 
   fastify.get('/_health', (_, reply) => {

@@ -7,23 +7,19 @@ import {
   PostgresDialect,
   PostgresIntrospector,
   PostgresQueryCompiler,
+  QueryCreator,
 } from 'kysely';
-import { PGClient } from './sql';
+import { PGClient, QueryCommand } from './sql';
 import { Pool } from 'pg';
 
 /* Only used for the helpers */
 const pgpInstance = pgp({});
 
-export interface Query {
-  readonly query: string;
-  readonly values: ReadonlyArray<unknown>;
+export function combine(queries: (QueryCommand | QueryCommand[])[]): string {
+  return pgpInstance.helpers.concat(queries.flat().map((q) => ({ query: q.sql, values: q.parameters })));
 }
 
-export function combine(queries: (Query | Query[])[]): string {
-  return pgpInstance.helpers.concat(queries.flat());
-}
-
-export async function combineAndExecute(client: PGClient, ...queries: Query[]): Promise<void> {
+export async function combineAndExecute(client: PGClient, ...queries: QueryCommand[]): Promise<void> {
   const queryText = combine(queries);
   await client.query({ text: queryText, values: [] });
 }
@@ -37,14 +33,19 @@ export async function kQuery<Result>(client: PGClient, query: CompiledQuery<Resu
     .then((d) => d.rows);
 }
 
+export async function kQueryOne<Result>(client: PGClient, query: CompiledQuery<Result>): Promise<Result | null> {
+  return client
+    .query<Result>({
+      text: query.sql,
+      values: query.parameters as any[],
+    })
+    .then((d) => d.rows[0] ?? null);
+}
+
 export class QueryBatch {
-  private readonly _queries: Query[] = [];
+  private readonly _queries: QueryCommand[] = [];
 
-  public addCompiled(...queries: CompiledQuery[]) {
-    this._queries.push(...queries.map((q) => ({ query: q.sql, values: q.parameters })));
-  }
-
-  public add(...queries: Query[]) {
+  public add(...queries: QueryCommand[]) {
     this._queries.push(...queries);
   }
 
@@ -61,7 +62,7 @@ export class QueryBatch {
   }
 }
 
-export function createPureQueryBuilder<T>(schema?: string) {
+export function createPureQueryBuilder<T>(schema?: string): Omit<QueryCreator<T>, 'selectFrom'> {
   const qb = new Kysely<T>({
     dialect: {
       createAdapter: () => new PostgresAdapter(),
